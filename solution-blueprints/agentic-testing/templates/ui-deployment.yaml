@@ -29,7 +29,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              pip install --no-cache-dir streamlit mcp openai requests && \
+              pip install --no-cache-dir -r /app/requirements.txt && \
               cd /app && \
               streamlit run testing_ui.py --server.port={{ .Values.ui.port }} --server.address=0.0.0.0
           ports:
@@ -99,4 +99,6 @@ spec:
                 path: utilities.py
               - key: testing_prompts.py
                 path: testing_prompts.py
+              - key: requirements.txt
+                path: requirements.txt
 {{- end }}

@@ -2,6 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+# HTTPRoute configuration (Gateway API)
+http_route:
+  enabled: false
+  gateway:
+    name: https
+    namespace: envoy-gateway-system
+
 # Streamlit UI configuration
 ui:
   enabled: true
@@ -14,12 +21,6 @@ ui:
 
   service:
     type: ClusterIP
-
-  # HTTPRoute configuration (Gateway API)
-  httpRoute:
-    enabled: false
-    gatewayName: https
-    gatewayNamespace: envoy-gateway-system
 
   # Test execution settings
   maxIterations: 20
@@ -62,7 +63,7 @@ llm:
 
   # Change name override according to model name from image (aim-{model}:{version})
   nameOverride: aimsb-agentic-testing-llm
-  model: ""  # If connecting to an external LLM service, optionally specify model to use
+  model: "" # If connecting to an external LLM service, optionally specify model to use
   apiKey: "" # If connecting to an external LLM service, optionally specify an API key
   apiKeySecretRef: {}
   # You may alternatively provide an API key that's stored in a Secret called `my-secretname` in the key `api-key` by adding:

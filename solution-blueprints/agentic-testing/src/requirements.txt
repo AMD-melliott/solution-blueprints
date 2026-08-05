@@ -1,0 +1,14 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+mcp>=1.28,<2
+openai==2.53.0
+requests==2.34.2
+# starlette is a transitive dependency of streamlit but is left unpinned by it
+# (streamlit==1.61.0 declares starlette<2,>=0.46.0). starlette 1.4.0 made
+# GZipResponder.__init__ require a new `thread_minimum_size` kwarg that
+# streamlit's _MediaAwareGZipResponder does not pass, causing HTTP 500s.
+# Pin below 1.4 until streamlit updates its call site.
+starlette>=0.46,<1.4
+streamlit==1.61.0

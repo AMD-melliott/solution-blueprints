@@ -144,13 +144,13 @@ If your cluster has a Gateway API compatible gateway (e.g., Kubernetes Gateway, 
 
 **Enabling HTTPRoute:**
 
-Use `--set ui.httpRoute.enabled=true` in the `helm template` command to enable HTTPRoute creation:
+Use `--set http_route.enabled=true` in the `helm template` command to enable HTTPRoute creation:
 
 ```bash
 name="my-deployment"
 namespace="my-namespace"
 helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-agentic-testing \
-  --set ui.httpRoute.enabled=true \
+  --set http_route.enabled=true \
   | kubectl apply -f - -n $namespace
 ```
 
@@ -159,7 +159,7 @@ helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-agentic-tes
 The URL to access the blueprint via HTTPRoute is formed by the service name and the hostname of the gateway. Use this command to produce the URL by querying the hostname from the cluster:
 
 ```bash
-echo "https://aimsb-agentic-testing-$name$(kubectl get gtw -A -o jsonpath='{.items[*].spec.listeners[?(@.name=="https")].hostname}' | tr -d \*)/"
+echo "https://aimsb-agentic-testing-$name$(kubectl get gtw https -n envoy-gateway-system -o jsonpath='{.spec.listeners[?(@.name=="https")].hostname}' | tr -d '*')/"
 ```
 
 ## Clean Up

@@ -44,7 +44,7 @@ The UI will be available at <http://localhost:8501>
 Deploy with HTTPRoute enabled:
 
 ```bash
-helm template $name . --set ui.httpRoute.enabled=true | kubectl apply -f - -n $namespace
+helm template $name . --set http_route.enabled=true | kubectl apply -f - -n $namespace
 ```
 
 Enter your test specifications in Gherkin format (Given-When-Then syntax) in the UI and run tests. The UI displays real-time execution logs and generates pytest-playwright code from successful runs.
