@@ -70,20 +70,13 @@ set -eu
 
 echo "=== AutoGen Studio ==="
 python3 --version; pip --version
-echo "[pip] installing AutoGen Studio..."
-pip install --no-cache-dir "{{ .Values.autogenstudio.pip }}"
-
-echo "[pip] installing sqlite-utils for database injection..."
-pip install --no-cache-dir sqlite-utils
-
-echo "[pip] installing requests for model name extraction..."
-pip install --no-cache-dir requests
 
 echo "[apt] installing gettext for envsubst (environment variable substitution)..."
 apt-get update && apt-get install -y gettext-base && rm -rf /var/lib/apt/lists/*
 
+echo "[pip] installing AutoGen Studio and other dependencies..."
+pip install --no-cache-dir -r /mnt/config/requirements.txt
 echo "[playwright] installing playwright and browsers for web surfing agents..."
-pip install --no-cache-dir playwright
 playwright install-deps
 playwright install chromium
 

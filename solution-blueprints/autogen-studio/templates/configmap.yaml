@@ -10,9 +10,11 @@ metadata:
     app.kubernetes.io/name: {{ .Chart.Name }}
 data:
   {{/*
-    Only default-gallery.json is included in the ConfigMap.
+    Only default-gallery.json and requirements.txt are included in the ConfigMap.
     If additional files are added to src/, they will not be automatically included.
     This behavior is intentional; update this section if more files need to be added.
   */}}
   default-gallery.json: |-
 {{ .Files.Get "src/default-gallery.json" | indent 4 }}
+  requirements.txt: |-
+{{ .Files.Get "src/requirements.txt" | indent 4 }}

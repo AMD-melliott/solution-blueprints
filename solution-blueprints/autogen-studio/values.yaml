@@ -4,9 +4,6 @@
 
 image: python:3.10-bullseye
 
-autogenstudio:
-  pip: autogenstudio==0.4.2.2
-
 llm:
   # Use existing external AIM service instead of deploying our own
   # Set to null or comment out to deploy own AIM service

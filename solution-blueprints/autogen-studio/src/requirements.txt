@@ -1,0 +1,8 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+autogenstudio==0.4.2.2
+playwright==1.61.0
+requests==2.34.2
+sqlite-utils==4.1.1
