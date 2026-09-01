@@ -1,0 +1,16 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+# Local dev / runtime data created by compose.yaml:
+# uploaded videos, tracked overlays, ChromaDB, model caches, and the SQLite DB.
+data/
+.env
+
+# Pulled Helm subchart archives (resolved at deploy time).
+charts/
+Chart.lock
+*.tgz
+
+# OS / editor junk
+.DS_Store

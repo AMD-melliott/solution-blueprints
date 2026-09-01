@@ -1,0 +1,120 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px 28px;
+  min-height: 64px;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.logo {
+  font-family: "Inter Tight", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  line-height: 1;
+}
+.logo em {
+  color: #22b5ff;
+  font-style: normal;
+}
+
+.tagline {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+/* Inline tab group sitting next to the logo */
+.tabs {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  gap: 2px;
+}
+
+.tab {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tabActive {
+  background: var(--blue);
+  color: #fff;
+}
+.tabActive:hover {
+  color: #fff;
+}
+
+.right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badgeReady {
+  background: var(--green-dim);
+  border: 1px solid rgba(0, 230, 118, 0.25);
+  color: var(--green);
+}
+.badgeLive {
+  background: var(--green-dim);
+  border: 1px solid rgba(0, 230, 118, 0.25);
+  color: var(--green);
+}
+.badgePaused {
+  background: var(--amber-dim);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--amber-bright);
+}
+.badgeFail {
+  background: var(--red-dim);
+  border: 1px solid rgba(255, 53, 71, 0.3);
+  color: var(--red);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}

@@ -48,6 +48,15 @@ helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-telecom-ass
   | kubectl apply -f - -n $namespace
 ```
 
+> **Known issue (Helm 4.2.1+):** Helm 4.2.1 and newer leak `Pulled:`/`Digest:` metadata to stdout ([helm#32215](https://github.com/helm/helm/issues/32215)), which breaks the piped `helm template … | kubectl apply -f -`. Until the fix ships, either use Helm **3.16 – 4.2.0**, or split the pull and template steps, e.g.:
+>
+> ```bash
+> helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-telecom-assistant --untar
+> helm template $name ./aimsb-telecom-assistant \
+>   # …same flags as the piped command above…
+>   | kubectl apply -f - -n $namespace
+> ```
+
 ## LiveKit WebSocket URL
 
 Media traffic from the browser to LiveKit is routed through **STUNner** regardless of the exposure mode.

@@ -1,0 +1,71 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "medworkup.fullname" . }}-ner
+  labels:
+    {{- include "medworkup.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "medworkup.fullname" . }}-ner
+  template:
+    metadata:
+      labels:
+        app: {{ include "medworkup.fullname" . }}-ner
+    spec:
+      securityContext:
+        fsGroup: 1000
+      {{- include "medworkup.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: ner
+          image: {{ include "medworkup.image" (dict "root" . "svc" .Values.images.ner) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.ports.ner }}
+          env:
+            - name: APP_PORT
+              value: {{ .Values.ports.ner | quote }}
+            - name: HF_HOME
+              value: "/models/hf_cache"
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.hfTokenSecret }}
+                  key: hf-token
+          envFrom:
+            - configMapRef:
+                name: {{ include "medworkup.fullname" . }}-config
+          resources:
+            {{- toYaml .Values.ner.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.ports.ner }}
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.ports.ner }}
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          {{- if .Values.storage.hfCache.enabled }}
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /models/hf_cache
+          {{- end }}
+      {{- if .Values.storage.hfCache.enabled }}
+      volumes:
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: {{ include "medworkup.fullname" . }}-hf-cache
+      {{- end }}

@@ -1,0 +1,54 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "medworkup.fullname" . }}-ui
+  labels:
+    {{- include "medworkup.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "medworkup.fullname" . }}-ui
+  template:
+    metadata:
+      labels:
+        app: {{ include "medworkup.fullname" . }}-ui
+    spec:
+      {{- include "medworkup.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: ui
+          image: {{ include "medworkup.image" (dict "root" . "svc" .Values.images.ui) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.ports.ui }}
+          resources:
+            {{- toYaml .Values.ui.resources | nindent 12 }}
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/hc1.conf
+              subPath: hc1.conf
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /nginx-health
+              port: {{ .Values.ports.ui }}
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /nginx-health
+              port: {{ .Values.ports.ui }}
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ include "medworkup.fullname" . }}-ui-nginx

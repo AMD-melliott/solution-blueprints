@@ -20,8 +20,6 @@ This blueprint supports **AMD Instinct** (default), **AMD EPYC**, and **AMD Rade
 
 The chart ships defaults for three platforms, selected with `--set global.platform=<platform>`: `instinct` (GPU, the default), `epyc` (CPU), and `radeon` (GPU). Each sets a matching AIM image and resource profile; inspect them with `helm show values . --jsonpath '{.llm.platformDefaults}'`.
 
-> **Helm note**: Built and tested on Helm 3.17 or higher. On Helm v4, if the piped `kubectl apply` is rejected, run `helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-docsum --untar` first and template the local `./aimsb-docsum` directory instead.
-
 ### AMD Instinct (GPU, default)
 
 To deploy the blueprint, run the following command:
@@ -33,6 +31,15 @@ helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-docsum \
   | kubectl apply -f - -n $namespace
 ```
 
+> **Known issue (Helm 4.2.1+):** Helm 4.2.1 and newer leak `Pulled:`/`Digest:` metadata to stdout ([helm#32215](https://github.com/helm/helm/issues/32215)), which breaks the piped `helm template … | kubectl apply -f -`. Until the fix ships, either use Helm **3.16 – 4.2.0**, or split the pull and template steps, e.g.:
+>
+> ```bash
+> helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-docsum --untar
+> helm template $name ./aimsb-docsum \
+>   # …same flags as the piped command above…
+>   | kubectl apply -f - -n $namespace
+> ```
+
 ### AMD EPYC (CPU)
 
 EPYC runs the model on CPU (`gpus=0`, `bf16`, `AIM_ALLOW_UNOPTIMIZED=true`), sized via `llm.cpus`/`llm.memory`. The default EPYC AIM is a **gated** image, so provide a Hugging Face token through a Secret.
@@ -43,8 +50,7 @@ namespace="my-namespace"
 kubectl create namespace $namespace
 kubectl create secret generic hf-token --from-literal=hf-token=<YOUR_HF_TOKEN> -n $namespace
 
-helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-docsum --untar
-helm template $name ./aimsb-docsum \
+helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-docsum \
   --set global.platform=epyc \
   --set llm.cpus=188 \
   --set llm.memory=128 \

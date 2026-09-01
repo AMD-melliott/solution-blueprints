@@ -1,0 +1,28 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+services:
+  orchestrator:
+    build:
+      context: ../services/orchestrator
+      dockerfile: Dockerfile
+    image: "${REGISTRY:?Must set REGISTRY}/${ORG:?Must set ORG}/image-aimsb-medworkup-orchestrator:${TAG:?Must set TAG}"
+
+  ner:
+    build:
+      context: ../services/ner
+      dockerfile: Dockerfile
+    image: "${REGISTRY:?Must set REGISTRY}/${ORG:?Must set ORG}/image-aimsb-medworkup-ner:${TAG:?Must set TAG}"
+
+  embedding:
+    build:
+      context: ../services/embedding
+      dockerfile: Dockerfile
+    image: "${REGISTRY:?Must set REGISTRY}/${ORG:?Must set ORG}/image-aimsb-medworkup-embedding:${TAG:?Must set TAG}"
+
+  ui:
+    build:
+      context: ../services/ui
+      dockerfile: Dockerfile
+    image: "${REGISTRY:?Must set REGISTRY}/${ORG:?Must set ORG}/image-aimsb-medworkup-ui:${TAG:?Must set TAG}"

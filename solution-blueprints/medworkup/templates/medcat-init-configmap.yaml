@@ -1,0 +1,103 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+{{- if .Values.medcat.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "medworkup.fullname" . }}-medcat-init
+  labels:
+    {{- include "medworkup.labels" . | nindent 4 }}
+data:
+  download.sh: |
+    #!/bin/sh
+    set -eu
+
+    OUTPUT="/cat/models/medcat_model.zip"
+    KCL_AUTH_URL="https://medcat.sites.er.kcl.ac.uk/auth-callback-api"
+    KCL_DOWNLOAD_URL="https://medcat.sites.er.kcl.ac.uk/download-model"
+
+    # Map short model name to the KCL modelpack form field value
+    case "${MEDCAT_MODEL:-snomed_mimic}" in
+      umls_small)   MODELPACK="MedCAT_UMLS_AllTypes_2020AB" ;;
+      umls_full)    MODELPACK="MedCAT_UMLS_AllTypes_2020AB_full" ;;
+      snomed_int)   MODELPACK="v2-SNOMED-2025-MIMIC" ;;
+      snomed_uk)    MODELPACK="v2-SNOMED-UK-2025-MIMIC" ;;
+      snomed_mimic) MODELPACK="v2-SNOMED-2025-MIMIC" ;;
+      *)
+        echo "ERROR: Unknown MEDCAT_MODEL '${MEDCAT_MODEL:-snomed_mimic}'." \
+             "Valid values: umls_small umls_full snomed_int snomed_uk snomed_mimic" >&2
+        exit 1 ;;
+    esac
+
+    # Skip download if model already present on the PVC (pod restart / redeploy)
+    if [ -f "${OUTPUT}" ]; then
+      echo "Model already present at ${OUTPUT} — skipping download."
+      exit 0
+    fi
+
+    echo "Authenticating with KCL licence portal..."
+
+    COOKIE_JAR=$(mktemp)
+    AUTH_HEADERS=$(mktemp)
+    trap 'rm -f "$COOKIE_JAR" "$AUTH_HEADERS"' EXIT
+
+    AUTH_HTTP=$(curl \
+      --silent --location \
+      --write-out "%{http_code}" \
+      --cookie-jar  "${COOKIE_JAR}" \
+      --dump-header "${AUTH_HEADERS}" \
+      --header "Accept: application/json, */*" \
+      --header "User-Agent: MedCAT-Downloader/1.0" \
+      --get \
+      --data-urlencode "key=${UMLS_API_KEY}" \
+      --output /dev/null \
+      "${KCL_AUTH_URL}")
+
+    if [ "${AUTH_HTTP}" != "200" ] && [ "${AUTH_HTTP}" != "302" ]; then
+      echo "ERROR: KCL auth failed (HTTP ${AUTH_HTTP}). Check UMLS_API_KEY." >&2
+      exit 1
+    fi
+
+    # Extract CSRF token — try cookie jar, fall back to Set-Cookie header
+    CSRF_TOKEN=$(awk '/csrftoken/{print $NF}' "${COOKIE_JAR}" | head -1)
+    if [ -z "${CSRF_TOKEN}" ]; then
+      CSRF_TOKEN=$(grep -i 'set-cookie:.*csrftoken' "${AUTH_HEADERS}" \
+        | sed -E 's/.*csrftoken=([^;, ]+).*/\1/' | head -1 || true)
+    fi
+    if [ -z "${CSRF_TOKEN}" ]; then
+      echo "ERROR: Could not extract CSRF token from KCL auth response." >&2
+      exit 1
+    fi
+
+    echo "Authenticated. Downloading model pack '${MODELPACK}'..."
+
+    DL_HTTP=$(curl \
+      --location --progress-bar \
+      --write-out "%{http_code}" \
+      --cookie      "${COOKIE_JAR}" \
+      --cookie      "csrftoken=${CSRF_TOKEN}" \
+      --header "User-Agent: MedCAT-Downloader/1.0" \
+      --header "X-CSRFToken: ${CSRF_TOKEN}" \
+      --header "Accept: application/octet-stream, */*" \
+      --data-urlencode "csrfmiddlewaretoken=${CSRF_TOKEN}" \
+      --data-urlencode "first_name=${MEDCAT_FIRST_NAME}" \
+      --data-urlencode "last_name=${MEDCAT_LAST_NAME}" \
+      --data-urlencode "email=${MEDCAT_EMAIL}" \
+      --data-urlencode "affiliation=${MEDCAT_AFFILIATION:-}" \
+      --data-urlencode "funder=${MEDCAT_FUNDER:-}" \
+      --data-urlencode "use_case=${MEDCAT_USE_CASE:-}" \
+      --data-urlencode "modelpack=${MODELPACK}" \
+      --data-urlencode "consent=on" \
+      --output "${OUTPUT}" \
+      "${KCL_DOWNLOAD_URL}")
+
+    if [ "${DL_HTTP}" != "200" ]; then
+      rm -f "${OUTPUT}"
+      echo "ERROR: Download failed (HTTP ${DL_HTTP})." >&2
+      exit 1
+    fi
+
+    echo "Download complete: ${OUTPUT}"
+{{- end }}

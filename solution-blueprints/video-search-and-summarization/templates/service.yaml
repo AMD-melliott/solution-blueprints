@@ -1,0 +1,18 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aimsb-video-search-and-summarization.fullname" . }}
+  labels:
+    {{- include "aimsb-video-search-and-summarization.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    {{- include "aimsb-video-search-and-summarization.selectorLabels" . | nindent 4 }}

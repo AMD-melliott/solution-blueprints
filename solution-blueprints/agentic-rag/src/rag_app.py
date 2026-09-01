@@ -228,7 +228,9 @@ with gr.Blocks(title=TITLE, css=custom_css) as demo:
 
 # Mount Gradio app inside FastAPI so both share the same port.
 # Gradio serves at "/", FastAPI endpoints at "/healthz", "/process", etc.
-app = gr.mount_gradio_app(app, demo, path="/")
+# Path must be "" and not "/": Gradio derives its sub-app root_path from it, and a
+# root_path of "/" makes Starlette redirect "/" to "//".
+app = gr.mount_gradio_app(app, demo, path="")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=GRADIO_PORT)

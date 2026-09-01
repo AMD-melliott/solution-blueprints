@@ -1,0 +1,35 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.tabs {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 9px 22px;
+  cursor: pointer;
+  font-family: "Syne", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+}
+.tab:hover {
+  color: var(--text);
+}
+.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}

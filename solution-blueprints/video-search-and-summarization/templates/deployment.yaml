@@ -1,0 +1,87 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+{{/* Main Deployment definition for the video-search-and-summarization blueprint. */}}
+{{- define "aimsb-video-search-and-summarization.deployment" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aimsb-video-search-and-summarization.fullname" . }}
+  labels:
+    {{- include "aimsb-video-search-and-summarization.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "aimsb-video-search-and-summarization.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aimsb-video-search-and-summarization.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: curlimages/curl:8.8.0
+        command: ['sh', '-c']
+        args:
+        - |
+          # Each wait is bounded and non-fatal, so a slow-loading model or the optional
+          # tracker cannot stop the app from serving.
+          retries={{ .Values.dependencyWait.retries }}
+          track_retries={{ .Values.dependencyWait.trackerRetries }}
+          wait_for() {
+            url="$1"; name="$2"; max="$3"; i=0
+            while [ "$i" -lt "$max" ]; do
+              if curl -s -f -o /dev/null "$url"; then echo "$name ready"; return 0; fi
+              i=$((i + 1)); sleep 5
+            done
+            echo "WARNING: $name not ready after $((max * 5))s; starting anyway"
+          }
+          echo "Waiting for backend services (bounded; app starts regardless)..."
+          {{- $cdb := dict "Values" (merge (dict) .Values.chromadb) "Release" .Release "Chart" (dict "Name" "chromadb") }}
+          wait_for "{{ include "aim-chromadb.url" $cdb }}/api/v2/heartbeat" "ChromaDB" "$retries"
+          {{- $llm := dict "Values" (merge (dict) .Values.llm) "Release" .Release "Chart" (dict "Name" "llm") }}
+          wait_for "{{ include "aimchart-llm.url" $llm }}/models" "LLM" "$retries"
+          wait_for "http://{{ include "aimsb-video-search-and-summarization.vlm.name" . }}:{{ .Values.vlm.port }}/v1/models" "VLM" "$retries"
+          wait_for "{{ include "aimsb-video-search-and-summarization.embedText.url" . }}/health" "Text embeddings" "$retries"
+          wait_for "{{ include "aimsb-video-search-and-summarization.embedImage.url" . }}/health" "Image embeddings" "$retries"
+          wait_for "http://{{ include "aimsb-video-search-and-summarization.track.name" . }}:{{ .Values.track.port }}/health" "Tracker (optional)" "$track_retries"
+          echo "Dependency checks complete; starting app"
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image | quote }}
+          imagePullPolicy: {{ .Values.imagePullPolicy | quote }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              {{- include "aimsb-video-search-and-summarization.entrypoint" . | nindent 14 }}
+          ports:
+            {{- range $key, $value := .Values.deployment.ports }}
+            - name: {{ $key }}
+              containerPort: {{ $value }}
+            {{- end }}
+          env:
+            {{- include "aimsb-video-search-and-summarization.container.env" . | nindent 12 }}
+          {{- if .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 -}}
+          {{- end }}
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 -}}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 -}}
+          {{- end }}
+          resources:
+            {{- include "aimsb-video-search-and-summarization.container.resources" . | nindent 12 }}
+          volumeMounts:
+            {{- include "aimsb-video-search-and-summarization.container.volumeMounts" . | nindent 12 }}
+      volumes:
+        {{- include "aimsb-video-search-and-summarization.container.volumes" . | nindent 8 }}
+{{- end }}
+
+{{/* Entrypoint: render the deployment defined above. */}}
+{{- include "aimsb-video-search-and-summarization.deployment" . -}}

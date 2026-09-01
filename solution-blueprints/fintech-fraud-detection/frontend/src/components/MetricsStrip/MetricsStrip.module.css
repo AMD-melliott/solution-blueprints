@@ -1,0 +1,183 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.metrics {
+  padding: 8px 40px 0;
+}
+
+.mcard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px 20px;
+}
+
+.mHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.mTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Thin hero summary row above the tiles */
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 6px 2px 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+.sumStat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.k {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: inline-flex;
+  align-items: center;
+}
+.v {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.mHint {
+  font-size: 12px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.g {
+  color: var(--green);
+}
+.a {
+  color: var(--amber-bright);
+}
+.r {
+  color: var(--red);
+}
+.b {
+  color: var(--blue-bright);
+}
+
+/* Five outcome tiles */
+.ogrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+.otile {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0f1217;
+  padding: 16px 16px 15px;
+  display: flex;
+  flex-direction: column;
+  min-height: 174px;
+  border-left: 3px solid var(--text-dim);
+}
+.tAuto {
+  border-left-color: var(--green);
+}
+.tReview {
+  border-left-color: var(--amber);
+}
+.tMissed {
+  border-left-color: var(--red);
+}
+.tFp {
+  border-left-color: var(--amber);
+}
+
+.otHead {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-half-dim);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.otHeadLabel {
+  display: inline-flex;
+  align-items: center;
+}
+.otDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* money = primary big number */
+.otMoney {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.6px;
+}
+.otMoneyPct {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+/* count = secondary, underneath */
+.otCount {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-half-dim);
+  margin-top: 13px;
+}
+.otCount span {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.otSub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: auto;
+  padding-top: 14px;
+}
+.otTag {
+  color: var(--amber-bright);
+  font-weight: 600;
+}
+
+.truncNote {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .ogrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .summary {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+}

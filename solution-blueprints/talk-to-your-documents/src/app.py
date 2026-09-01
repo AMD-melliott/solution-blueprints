@@ -145,7 +145,7 @@ with gr.Blocks(title=TITLE) as demo:
 
     clr_btn.click(fn=clear_all_ui, inputs=None, outputs=[files_input, q_input, q_display, scratchpad_out, final_out])
 
-app = gr.mount_gradio_app(app, demo, path="/")
+app = gr.mount_gradio_app(app, demo, path="")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=GRADIO_PORT)
+    uvicorn.run(app, host="0.0.0.0", port=GRADIO_PORT, proxy_headers=True)

@@ -1,0 +1,92 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+{{/*
+Vision-language model (captioning), served with ROCm vLLM. There is no aimchart for a
+VLM yet; when an 8B-class Qwen3-VL AIM is published this can move to an aimchart-llm alias.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aimsb-video-search-and-summarization.vlm.name" . }}
+  labels:
+    {{- include "aimsb-video-search-and-summarization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vlm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ include "aimsb-video-search-and-summarization.vlm.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "aimsb-video-search-and-summarization.vlm.name" . }}
+        app.kubernetes.io/component: vlm
+    spec:
+      containers:
+        - name: vlm
+          image: {{ .Values.vlm.image | quote }}
+          args:
+            - --model
+            - {{ .Values.vlm.model | quote }}
+            - --served-model-name
+            - {{ .Values.vlm.model | quote }}
+            - --max-model-len
+            - {{ .Values.vlm.maxModelLen | quote }}
+            - --gpu-memory-utilization
+            - {{ .Values.vlm.gpuMemoryUtilization | quote }}
+            {{- range .Values.vlm.extraArgs }}
+            - {{ . | quote }}
+            {{- end }}
+          env:
+            - name: VLLM_USE_TRITON_FLASH_ATTN
+              value: "0"
+            {{- if .Values.hfTokenSecret }}
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.hfTokenSecret }}
+                  key: HF_TOKEN
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.vlm.port }}
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 120
+          resources:
+            {{- toYaml .Values.vlm.resources | nindent 12 }}
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: model-cache
+              mountPath: /root/.cache/huggingface
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.vlm.shmSize | quote }}
+        - name: model-cache
+          emptyDir:
+            sizeLimit: {{ .Values.vlm.modelCacheSize | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aimsb-video-search-and-summarization.vlm.name" . }}
+  labels:
+    {{- include "aimsb-video-search-and-summarization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vlm
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "aimsb-video-search-and-summarization.vlm.name" . }}
+  ports:
+    - name: http
+      port: {{ .Values.vlm.port }}
+      targetPort: http

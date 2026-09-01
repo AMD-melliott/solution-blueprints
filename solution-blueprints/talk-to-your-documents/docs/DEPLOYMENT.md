@@ -20,8 +20,6 @@ This blueprint supports **AMD Instinct** (default), **AMD EPYC**, and **AMD Rade
 
 The chart ships defaults for three platforms, selected with `--set global.platform=<platform>`: `instinct` (GPU, the default), `epyc` (CPU), and `radeon` (GPU). Each sets matching AIM images and resource profiles for the LLM and embedding components; inspect them with `helm show values . --jsonpath '{.llm.platformDefaults}'` and `helm show values . --jsonpath '{.embedding.platformDefaults}'`.
 
-> **Helm note**: Built and tested on Helm 3.17 or higher. On Helm v4, if the piped `kubectl apply` is rejected, run `helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-talk-to-your-documents --untar` first and template the local `./aimsb-talk-to-your-documents` directory instead.
-
 ### AMD Instinct (GPU, default)
 
 ```bash
@@ -30,6 +28,15 @@ namespace="my-namespace"
 helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-talk-to-your-documents \
   | kubectl apply -f - -n $namespace
 ```
+
+> **Known issue (Helm 4.2.1+):** Helm 4.2.1 and newer leak `Pulled:`/`Digest:` metadata to stdout ([helm#32215](https://github.com/helm/helm/issues/32215)), which breaks the piped `helm template … | kubectl apply -f -`. Until the fix ships, either use Helm **3.16 – 4.2.0**, or split the pull and template steps, e.g.:
+>
+> ```bash
+> helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-talk-to-your-documents --untar
+> helm template $name ./aimsb-talk-to-your-documents \
+>   # …same flags as the piped command above…
+>   | kubectl apply -f - -n $namespace
+> ```
 
 ### AMD EPYC (CPU)
 
@@ -41,8 +48,7 @@ namespace="my-namespace"
 kubectl create namespace $namespace
 kubectl create secret generic hf-token --from-literal=hf-token=<YOUR_HF_TOKEN> -n $namespace
 
-helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-talk-to-your-documents --untar
-helm template $name ./aimsb-talk-to-your-documents \
+helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-talk-to-your-documents \
   --set global.platform=epyc \
   --set llm.cpus=188 \
   --set llm.memory=128 \

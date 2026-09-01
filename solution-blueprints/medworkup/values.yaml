@@ -1,0 +1,205 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+http_route:
+  enabled: false
+  gateway:
+    name: https
+    namespace: envoy-gateway-system
+
+replicaCount: 1
+
+# ── Image configuration ────────────────────────────────────────────────────────
+# registry: prefix for the four custom images (orchestrator, ner, embedding, ui).
+# Must include a trailing slash. medcat and medgemma use upstream public images.
+imagePullSecrets: []
+images:
+  registry: "registry-1.docker.io/amdenterpriseai/image-aimsb-medworkup-"
+  pullPolicy: IfNotPresent
+  orchestrator:
+    repository: orchestrator
+    tag: "{{ .Chart.Version }}"
+  ner:
+    repository: ner
+    tag: "{{ .Chart.Version }}"
+  embedding:
+    repository: embedding
+    tag: "{{ .Chart.Version }}"
+  ui:
+    repository: ui
+    tag: "{{ .Chart.Version }}"
+  medcat:
+    repository: cogstacksystems/medcat-service
+    tag: latest
+
+# ── Port configuration ─────────────────────────────────────────────────────────
+ports:
+  orchestrator: 8003
+  ner: 8001
+  embedding: 8002
+  ui: 8080
+  medcat: 8004
+
+# ── Credentials ────────────────────────────────────────────────────────────────
+# Credentials are never stored in values.yaml. Create the required Kubernetes Secrets
+# before deploying (see docs/DEPLOYMENT.md § Credentials), then set the secret names below.
+secrets:
+  # Name of a pre-existing K8s Secret that contains the HuggingFace token.
+  # The secret must have a key named 'hf-token'.
+  # kubectl create secret generic hf-token --from-literal=hf-token=<TOKEN>
+  hfTokenSecret: hf-token
+
+  # Name of a pre-existing K8s Secret that contains MedCAT registration details.
+  # Required keys: UMLS_API_KEY, MEDCAT_FIRST_NAME, MEDCAT_LAST_NAME,
+  #                MEDCAT_EMAIL, MEDCAT_AFFILIATION, MEDCAT_USE_CASE
+  # Optional key:  MEDCAT_FUNDER
+  medcatCredentialsSecret: medcat-credentials
+
+# ── Pipeline configuration ─────────────────────────────────────────────────────
+pipeline:
+  entitySimilarityThreshold: "0.85"
+  diagnosisMinConfidence: "0.05"
+  expandAbbreviations: "true"
+  llmModel: "google/medgemma-27b-it"
+  llmTemperature: "0.1"
+  llmMaxTokens: "2048"
+  llmTimeout: "120"
+  debugPipeline: "false"
+  logLevel: "info"
+  ompNumThreads: "4"
+  mklNumThreads: "4"
+
+# ── NER service ────────────────────────────────────────────────────────────────
+ner:
+  onnxPath: ""
+  hfModelId: "Ihor/gliner-biomed-large-v1.0"
+  hfDevice: "cpu"
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+
+# ── Embedding service ──────────────────────────────────────────────────────────
+embedding:
+  onnxPath: ""
+  hfModelId: "cambridgeltl/SapBERT-from-PubMedBERT-fulltext"
+  hfDevice: "cpu"
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+
+# ── Orchestrator ───────────────────────────────────────────────────────────────
+orchestrator:
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+
+# ── UI ─────────────────────────────────────────────────────────────────────────
+ui:
+  serviceType: ClusterIP    # ClusterIP | NodePort | LoadBalancer
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+
+# ── MedCAT service ─────────────────────────────────────────────────────────────
+medcat:
+  enabled: true
+  model: "snomed_mimic"    # model to download: umls_small | umls_full | snomed_int | snomed_uk | snomed_mimic
+  modelPackPath: "/cat/models/medcat_model.zip"    # fixed output path written by the init container
+  cdbPath: ""
+  vocabPath: ""
+  metaPathList: ""
+  modelName: "MedCAT"
+  serverWorkers: "1"
+  workerTimeout: "300"
+  bulkNproc: "8"
+  shmSize: "8Gi"
+  resources:
+    requests:
+      cpu: "2"
+      memory: "8Gi"
+    limits:
+      cpu: "8"
+      memory: "32Gi"
+
+# ── MedGemma (AMD AIM LLM, deployed via the aimchart-llm subchart) ───────────
+# See aimcharts/aimchart-llm/values.yaml for the full set of supported keys.
+medgemma:
+  enabled: true
+  nameOverride: "medgemma"
+  platform: instinct
+  platformDefaults:
+    instinct:
+      image: "docker.io/amdenterpriseai/aim-google-medgemma-27b-it:0.13.0"
+
+  # Set medgemma.enabled to false and point this at an external OpenAI-compatible
+  # endpoint to skip deploying the bundled subchart entirely.
+  existingService: ""
+  # If that external endpoint requires auth, set one of the two below — the
+  # orchestrator sends it as an `Authorization: Bearer <token>` header.
+  apiKey: ""
+  apiKeySecretRef: {}
+  # apiKeySecretRef:
+  #   name: my-llm-api-key
+  #   key: api-key
+
+  # `resources` below is set explicitly, so aimchart-llm's gpus/memory_per_gpu/cpu_per_gpu
+  # formula is never consulted — GPU count comes only from resources.limits."amd.com/gpu".
+  resources:
+    requests:
+      cpu: "4"
+      memory: "64Gi"
+    limits:
+      cpu: "16"
+      memory: "192Gi"
+      amd.com/gpu: 1
+  storage:
+    ephemeral:
+      quantity: 80Gi
+      storageClassName: mlstorage
+      accessModes:
+        - ReadWriteOnce
+    dshm:
+      sizeLimit: 64Gi
+  env_vars:
+    # Matches the default in secrets.hfTokenSecret above. If you override
+    # secrets.hfTokenSecret, override this to the same secret name too.
+    HF_TOKEN:
+      name: hf-token
+      key: hf-token
+    AIM_ENGINE_ARGS: '{"no-async-scheduling": null}'
+    VLLM_MAX_NUM_BATCHED_TOKENS: "4096"
+    VLLM_MAX_NUM_SEQS: "1024"
+
+# ── CORS ───────────────────────────────────────────────────────────────────────
+# Allowed origins for cross-origin requests. Defaults to "*" (open) for local development.
+# Set to a specific origin (e.g. "https://app.example.com") for production deployments.
+corsOrigins: "*"
+
+# ── Storage ────────────────────────────────────────────────────────────────────
+storage:
+  hfCache:
+    enabled: true
+    storageClassName: ""
+    size: 20Gi
+  modelArtifacts:
+    # PVC is created automatically when medcat.enabled is true.
+    # Leave storageClassName empty to use the cluster default StorageClass.
+    storageClassName: ""
+    size: 20Gi

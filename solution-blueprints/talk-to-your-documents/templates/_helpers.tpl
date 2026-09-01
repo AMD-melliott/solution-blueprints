@@ -131,5 +131,5 @@ echo "Installing Python dependencies..."
 pip install --no-cache-dir -r /workload/mount/src/requirements.txt
 echo "Starting Uvicorn server..."
 cd /workload/mount/src
-uvicorn app:app --host 0.0.0.0 --port {{ .Values.deployment.ports.http }} --root-path /
+uvicorn app:app --host 0.0.0.0 --port {{ .Values.deployment.ports.http }} --root-path / --proxy-headers
 {{- end }}

@@ -1,0 +1,27 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: v2
+name: aimsb-medworkup
+description: A Helm chart for deploying the MedWorkUp Clinical Diagnostic Assistant on Kubernetes
+type: application
+version: 0.1.0
+
+dependencies:
+  - name: aimchart-llm
+    version: 0.3.0
+    repository: oci://registry-1.docker.io/amdenterpriseai
+    alias: medgemma
+    condition: medgemma.enabled
+
+maintainers:
+  - name: AMD
+    url: https://www.amd.com/
+
+annotations:
+  org.opencontainers.image.vendor: AMD
+  com.amd.aim.description.full: "End-to-end clinical NLP pipeline that processes SOAP notes through a 9-step pipeline to produce structured differential diagnoses. Combines GLiNER NER, SapBERT embeddings, MedCAT UMLS/SNOMED concept linking, and MedGemma 27B LLM reasoning."
+  com.amd.aim.description.short: "Clinical NLP pipeline for SOAP note analysis and differential diagnosis generation using AMD MedGemma."
+  com.amd.aim.hfToken.required: "true"
+  com.amd.aim.title: "MedWorkUp — Clinical Diagnostic Assistant"

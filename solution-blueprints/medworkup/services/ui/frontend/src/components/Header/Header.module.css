@@ -1,0 +1,112 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.header {
+  height: var(--header-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── brand ─────────────────────────────────────────────────────────────── */
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.logoAccent {
+  background: var(--logo-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.subtitle {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+/* ── service pills (right side) ────────────────────────────────────────── */
+.right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-pill);
+  user-select: none;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-b);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.dot.ok {
+  background: var(--hdr-dot-green);
+}
+.dot.degraded {
+  background: var(--amber);
+}
+.dot.down {
+  background: var(--red);
+}
+.dot.unknown {
+  background: var(--amber);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* system-ready summary badge */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.statusBadge.ok {
+  background: var(--sysready-bg);
+  border-color: var(--sysready-border);
+  color: var(--sysready-text);
+}
+.statusBadge.degraded {
+  background: var(--amber-dim);
+  border-color: var(--amber-mid);
+  color: var(--amber);
+}
+.statusBadge.unknown {
+  background: var(--amber-dim);
+  border-color: var(--amber-mid);
+  color: var(--amber);
+}

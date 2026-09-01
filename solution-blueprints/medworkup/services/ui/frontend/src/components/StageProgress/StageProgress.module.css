@@ -1,0 +1,124 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px 24px;
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--border);
+  border-top-color: var(--blue-action);
+  border-radius: 50%;
+  animation: stage-spin 0.7s linear infinite;
+}
+@keyframes stage-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.stages {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: 260px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px;
+}
+
+.stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-xs);
+  transition: color 0.3s;
+}
+.stage.active {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.stage.done {
+  color: var(--text);
+}
+
+/* vertical column holding the marker and the connector beneath it */
+.markerCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.stageName {
+  padding-top: 5px;
+}
+
+.marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+}
+.stage.done .marker {
+  background: #079455;
+  border-color: #079455;
+  color: #04150d;
+}
+.stage.active .marker {
+  border: none;
+  background: var(--blue-action);
+  box-shadow:
+    0 0 0 2px var(--surface-2),
+    0 0 0 4px var(--blue-action);
+}
+.activeDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: none;
+}
+.stage.pending .marker {
+  border-color: var(--border-b);
+}
+
+/* connectors between rows */
+.connDotted,
+.connLine {
+  flex: 1;
+  width: 0;
+  margin: 3px 0;
+  min-height: 14px;
+}
+.connDotted {
+  border-left: 3px dotted var(--border-b);
+}
+.connLine {
+  border-left: 1px solid var(--border);
+}

@@ -1,0 +1,161 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+/* ============================================================================
+   Global design tokens — DARK ONLY.
+
+   Values reconciled from two sources:
+   1. The existing [data-theme="dark"] block in the legacy static/index.html
+      (the project's established dark palette).
+   2. The new Figma screenshots (MEDWORKUP rebrand), which are darker/bluer
+      and use a cyan logo accent + bright-blue confidence bars.
+
+   The legacy app had a light/dark toggle. Per the new design this is
+   dark-only, so there is a single :root with no theme switching.
+   ============================================================================ */
+
+:root {
+  /* surfaces — exact Figma values */
+  --bg: #0c0e12; /* main background AND column body (same color) */
+  --surface: #0c0e12; /* columns share the page background */
+  --surface-2: #13161b; /* selected note / column headers (lighter gray) */
+  --surface-3: #0d1320; /* slightly inset panels */
+  --border: #22262f; /* column 1px borders */
+  --border-b: #2a3f5a;
+
+  /* text */
+  --text: #f7f7f7; /* headers like "Clinical Notes" */
+  --text-dim: #94979c; /* middle-column note text */
+  --text-pill: #cecfd2; /* header pill labels */
+  --text-xs: #4a6080;
+
+  /* brand + accents */
+  --blue: #3b82f6;
+  --blue-action: #0086c9; /* Analyze button, + New icon */
+  /* logo "WORKUP" gradient */
+  --logo-grad: linear-gradient(90deg, #22b5ff 0%, #5ae3de 100%);
+  --blue-bright: #38bdf8;
+  --blue-dim: rgba(59, 130, 246, 0.1);
+  --blue-mid: rgba(59, 130, 246, 0.18);
+  --cyan: #22d3ee;
+
+  /* status: "Ready" pill (blue) */
+  --ready-bg: #102a56;
+  --ready-border: #1849a9;
+  --ready-dot: #2e90fa;
+
+  /* status: "Insufficient" pill (red) */
+  --insuf-bg: #55160c;
+  --insuf-text: #fda29b;
+  --insuf-border: #912018;
+  --insuf-dot: #f04438;
+
+  /* header pill green (system status dots + "System ready" badge) */
+  --hdr-dot-green: #17b26a;
+  --sysready-bg: #053321;
+  --sysready-text: #75e0a7;
+  --sysready-border: #085d3a;
+
+  --green: #22c55e;
+  --green-dim: rgba(34, 197, 94, 0.1);
+  --green-mid: rgba(34, 197, 94, 0.18);
+
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.1);
+  --red-mid: rgba(239, 68, 68, 0.18);
+
+  --amber: #f59e0b;
+  --amber-dim: rgba(245, 158, 11, 0.1);
+  --amber-mid: rgba(245, 158, 11, 0.18);
+
+  --purple: #a78bfa;
+  --purple-dim: rgba(167, 139, 250, 0.1);
+
+  /* entity-category colors (match legacy hl-* + cat-chip palette) */
+  --cat-symptom: #f87171;
+  --cat-disease: #a78bfa;
+  --cat-finding: #22d3ee;
+  --cat-procedure: #4ade80;
+  --cat-other: #94a3b8;
+
+  /* shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+  /* radii */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  /* type */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  /* layout */
+  --header-h: 80px; /* top app header (logo bar) */
+  --col-head-h: 76px; /* per-column header row */
+  --col-radius: 12px; /* column card corners */
+  --btn-h: 36px; /* New / Analyze buttons */
+  --btn-radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+/* shared thin scrollbar */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}

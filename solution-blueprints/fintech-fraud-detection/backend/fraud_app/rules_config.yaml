@@ -1,0 +1,58 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+# SPDX-License-Identifier: MIT
+#
+# FT-1 rules-engine configuration. Tuned on IEEE-CIS train (590,540 rows, base
+# fraud rate 3.5%) by tune_rules.py and validated on the 20% temporal holdout.
+#
+# Loaded by RulesEngine(config_path=...). Every value here has a hardcoded
+# default in the engine, so a missing key falls back to the engine default —
+# the config only OVERRIDES. JSON parses as YAML, so this file is readable by
+# both the stdlib sandbox (json/yaml) and the backend (yaml.safe_load).
+
+# ── Auto-block tier ───────────────────────────────────────────────────────────
+# A transaction's fraud_score = calibrated fraud rate of the exact combination
+# of stateless rules it fires (see scorecard.json). It auto-blocks (DECLINE)
+# when fraud_score >= fraud_threshold.
+#
+# Operating point chosen 2026-06-26 (after global coefficient tuning, theta swept
+# on the new coefficients):
+#   theta=0.25 -> blocked 1258, TP 871, FP 387, precision 69.2%,
+#                 block-recall 21.4%, FP/TP 0.44  (held-out test).
+# On the precision plateau (theta 0.20-0.30); theta=0.20 (911@64%) catches a bit
+# more at lower precision, below 0.20 precision falls off a cliff (0.15 -> 47%).
+block:
+  fraud_threshold: 0.25
+  scorecard_path: scorecard.json   # relative to this config file
+  min_support: 50                  # signatures below this support never block
+
+# ── FP budget guard ───────────────────────────────────────────────────────────
+# Invariant checked by validate/tune (NOT a per-transaction runtime gate):
+# false positives in the block set must not exceed X times true positives.
+# X=5 <=> block-set precision >= 1/(1+X) = 16.7%. At theta=0.25 we run FP/TP=0.38,
+# ~13x inside budget — X is a safety bound, not the active lever.
+fp_budget:
+  max_fp_to_tp_ratio: 5
+  enforce_on: block
+
+# ── Per-rule thresholds (override engine defaults) ────────────────────────────
+# Current shipping thresholds (matches the chosen operating point). The sweep
+# also found loosenings that catch more fraud at equal precision — kept here as
+# comments, to be adopted only after re-running the curve on the new thresholds.
+thresholds:
+  # Tuned 2026-06-26 via global 3-way-split search (search_global.py): calibrate
+  # 60% / SELECT 20% / report 20% test — out-of-sample, not overfit to holdout.
+  # This set = "871@69%" operating point: +9% fraud (796→871) for -3pp precision
+  # (72.3%→69.2%) at theta=0.25, FP/TP 0.44 (still ~11x inside the X=5 budget).
+  R030: { c1_min: 15 }            # tighter R030 (was 10)
+  R031: { c4_min: 2, c7_min: 1 }  # C7 clause verified inert; c4_min drives it
+  R032: { hour_start: 5, hour_end: 10 }
+  R022: { d1_max: 14, c1_min: 4 } # looser days, c1>4 (was d1<7 & c1>5) — the main fraud-catch lever
+
+# ── Tier / enabled assignment ─────────────────────────────────────────────────
+# review : escalate ML APPROVE -> REVIEW (non-blocking)
+# monitor: annotate / log only (non-blocking, no FP penalty)
+# disabled: not evaluated (0-2% precision on IEEE-CIS — pure noise)
+tiers:
+  review:  [R030, R031, R032, R022]
+  monitor: [R033, R034, R035, R013, R005, R012, R015, R024]   # R035 = M4=M2 (winner-inspired combiner)
+  disabled: [R006, R010, R011, R020, R021, R023]

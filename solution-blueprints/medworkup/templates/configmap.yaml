@@ -1,0 +1,69 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "medworkup.fullname" . }}-config
+  labels:
+    {{- include "medworkup.labels" . | nindent 4 }}
+data:
+  # ── Pipeline thresholds ───────────────────────────────────────────────────────
+  ENTITY_SIMILARITY_THRESHOLD: {{ .Values.pipeline.entitySimilarityThreshold | quote }}
+  DIAGNOSIS_MIN_CONFIDENCE: {{ .Values.pipeline.diagnosisMinConfidence | quote }}
+  EXPAND_ABBREVIATIONS: {{ .Values.pipeline.expandAbbreviations | quote }}
+  DEBUG_PIPELINE: {{ .Values.pipeline.debugPipeline | quote }}
+  LOG_LEVEL: {{ .Values.pipeline.logLevel | quote }}
+
+  # ── LLM parameters ────────────────────────────────────────────────────────────
+  LLM_MODEL: {{ .Values.pipeline.llmModel | quote }}
+  LLM_TEMPERATURE: {{ .Values.pipeline.llmTemperature | quote }}
+  LLM_MAX_TOKENS: {{ .Values.pipeline.llmMaxTokens | quote }}
+  LLM_TIMEOUT: {{ .Values.pipeline.llmTimeout | quote }}
+
+  # ── CPU thread limits ─────────────────────────────────────────────────────────
+  OMP_NUM_THREADS: {{ .Values.pipeline.ompNumThreads | quote }}
+  MKL_NUM_THREADS: {{ .Values.pipeline.mklNumThreads | quote }}
+
+  # ── Service URLs (internal cluster DNS) ──────────────────────────────────────
+  # llm_client.py appends "/v1/chat/completions" itself, so strip the "/v1"
+  # suffix that the aimchart-llm.url helper adds. The aimchart-llm subchart
+  # (and its "aimchart-llm.url" helper) is only loaded when medgemma.enabled
+  # is true, since the dependency's `condition` excludes it otherwise.
+  {{- if .Values.medgemma.enabled }}
+  {{- $medgemmaCtx := dict "Values" (merge (dict) .Values.medgemma) "Release" .Release "Chart" (dict "Name" "medgemma") }}
+  LLM_BASE_URL: {{ trimSuffix "/v1" (include "aimchart-llm.url" $medgemmaCtx) | quote }}
+  {{- else if .Values.medgemma.existingService }}
+  {{- $existing := trimSuffix "/v1" (trimSuffix "/" .Values.medgemma.existingService) }}
+  LLM_BASE_URL: {{ trimSuffix "/" $existing | quote }}
+  {{- else }}
+  LLM_BASE_URL: ""
+  {{- end }}
+  NER_BASE_URL: {{ include "medworkup.nerUrl" . | quote }}
+  EMBEDDING_BASE_URL: {{ include "medworkup.embeddingUrl" . | quote }}
+  MEDCAT_BASE_URL: {{ include "medworkup.medcatUrl" . | quote }}
+
+  # ── NER service ───────────────────────────────────────────────────────────────
+  NER_ONNX_PATH: {{ .Values.ner.onnxPath | quote }}
+  NER_HF_MODEL_ID: {{ .Values.ner.hfModelId | quote }}
+  HF_DEVICE: {{ .Values.ner.hfDevice | quote }}
+
+  # ── Embedding service ─────────────────────────────────────────────────────────
+  EMBEDDING_ONNX_PATH: {{ .Values.embedding.onnxPath | quote }}
+  EMBEDDING_HF_MODEL_ID: {{ .Values.embedding.hfModelId | quote }}
+
+  # ── MedCAT service ────────────────────────────────────────────────────────────
+  APP_MODEL_NAME: {{ .Values.medcat.modelName | quote }}
+  APP_MEDCAT_MODEL_PACK: {{ .Values.medcat.modelPackPath | quote }}
+  APP_MODEL_CDB_PATH: {{ .Values.medcat.cdbPath | quote }}
+  APP_MODEL_VOCAB_PATH: {{ .Values.medcat.vocabPath | quote }}
+  APP_MODEL_META_PATH_LIST: {{ .Values.medcat.metaPathList | quote }}
+  APP_BULK_NPROC: {{ .Values.medcat.bulkNproc | quote }}
+  SERVER_WORKERS: {{ .Values.medcat.serverWorkers | quote }}
+  SERVER_WORKER_TIMEOUT: {{ .Values.medcat.workerTimeout | quote }}
+  SERVER_HOST: "0.0.0.0"
+  SERVER_PORT: {{ .Values.ports.medcat | quote }}
+
+  # ── CORS ──────────────────────────────────────────────────────────────────────
+  CORS_ORIGINS: {{ .Values.corsOrigins | default "*" | quote }}

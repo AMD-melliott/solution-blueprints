@@ -956,8 +956,13 @@ def health_check():
     return JSONResponse(content=payload, status_code=200 if is_ready else 503)
 
 
-app = gr.mount_gradio_app(app, iface, path="/")
+app = gr.mount_gradio_app(app, iface, path="")
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("GRADIO_SERVER_PORT", 7860)))
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=int(os.environ.get("GRADIO_SERVER_PORT", 7860)),
+        proxy_headers=True,
+    )

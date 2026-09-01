@@ -6,7 +6,7 @@ apiVersion: v2
 name: aimsb-llm-router
 description: A Helm chart for deploying LLM Router on Kubernetes
 type: application
-version: 0.2.3
+version: 0.2.4
 
 maintainers:
   - name: AMD

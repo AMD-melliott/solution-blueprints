@@ -1,0 +1,19 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fintech.complexName" . }}-gnn
+  labels:
+    {{- include "fintech.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.ports.gnn }}
+      targetPort: {{ .Values.ports.gnn }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "fintech.complexName" . }}-gnn

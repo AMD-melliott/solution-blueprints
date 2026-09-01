@@ -1,0 +1,34 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+FROM rocm/dev-ubuntu-24.04:7.1.1-complete
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-pip python-is-python3 gcc g++ make git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# PyTorch must come from the ROCm wheel index
+RUN pip install --no-cache-dir --break-system-packages torch \
+    --index-url https://download.pytorch.org/whl/rocm7.1
+
+COPY requirements-gnn-train.txt ./
+RUN pip install --no-cache-dir --break-system-packages -r requirements-gnn-train.txt
+
+COPY config.yaml service_gnn.sh ./
+COPY pipeline/ ./pipeline/
+RUN chmod +x service_gnn.sh
+
+# /app/data      — bind-mount CSV files (read-only)
+# /app/artifacts — bind-mount shared artifact storage (writable)
+VOLUME ["/app/data", "/app/artifacts"]
+
+ENV CONFIG=config.yaml \
+    LOG_DIR=/app/logs \
+    SKIP_GRAPH=0 \
+    SKIP_TRAIN=0 \
+    SKIP_VIZ=1
+
+CMD ["bash", "service_gnn.sh"]

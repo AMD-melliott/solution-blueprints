@@ -1,0 +1,93 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fintech.complexName" . }}-middleware
+  labels:
+    {{- include "fintech.labels" . | nindent 4 }}
+    app: {{ include "fintech.complexName" . }}-middleware
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "fintech.complexName" . }}-middleware
+  template:
+    metadata:
+      labels:
+        app: {{ include "fintech.complexName" . }}-middleware
+    spec:
+      {{- include "fintech.imagePullSecrets" . | nindent 6 }}
+      initContainers:
+        - name: download-transactions
+          image: {{ .Values.artifacts.initImage }}
+          command:
+            - sh
+            - -c
+            - |
+              pip install -q huggingface_hub && \
+              [ -f /app/data/.download_complete ] || \
+              (hf download --repo-type dataset {{ .Values.artifacts.transactions.hfRepo }} --local-dir /app/data && \
+              touch /app/data/.download_complete)
+          env:
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.hfSecret.name }}
+                  key: {{ .Values.hfSecret.key }}
+          volumeMounts:
+            - name: middleware-data
+              mountPath: /app/data
+      containers:
+        - name: middleware
+          image: "{{ .Values.images.middleware.repository }}:{{ tpl .Values.images.middleware.tag . }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ports.middleware }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: {{ .Values.ports.middleware | quote }}
+            - name: WORKER_URL
+              value: {{ include "fintech.backendUrl" . | quote }}
+            - name: STREAM_INTERVAL_MS
+              value: {{ .Values.middleware.streamIntervalMs | quote }}
+            - name: DEMO_CSV_PATH
+              value: {{ .Values.middleware.demoCsvPath | quote }}
+            - name: IDENTITY_CSV_PATH
+              value: {{ .Values.middleware.identityCsvPath | quote }}
+            - name: MAX_DEMO_ROWS
+              value: {{ .Values.middleware.maxDemoRows | quote }}
+            {{- range $key, $value := .Values.env_vars.middleware }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources.middleware | nindent 12 }}
+          volumeMounts:
+            - name: middleware-data
+              mountPath: /app/data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.ports.middleware }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.ports.middleware }}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: middleware-data
+          persistentVolumeClaim:
+            claimName: {{ include "fintech.complexName" . }}-middleware-data

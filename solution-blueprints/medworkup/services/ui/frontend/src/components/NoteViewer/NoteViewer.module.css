@@ -1,0 +1,197 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.head {
+  height: var(--col-head-h);
+  flex-shrink: 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timingBadge {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+/* Analyze button — 36px tall, 8px radius, action blue */
+.analyzeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: var(--btn-h);
+  padding: 0 16px;
+  border-radius: var(--btn-radius);
+  border: 1px solid var(--blue-action);
+  background: var(--blue-action);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.analyzeBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.analyzeBtn:disabled {
+  border: none;
+  color: var(--text-dim);
+  background-color: var(--border);
+  cursor: not-allowed;
+}
+/* loading state: match the column-header surface, not the bright blue */
+.analyzeBtn.loading {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+/* "Done" badge after analysis */
+.doneBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--btn-h);
+  padding: 0 14px;
+  border-radius: var(--btn-radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue-action);
+  border-radius: 50%;
+  animation: nv-spin 0.6s linear infinite;
+}
+@keyframes nv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── sufficiency banner ──────────────────────────────────────────────────── */
+.banner {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.banner.analyzed {
+  background: #082119;
+}
+.banner.insufficient {
+  background: #30120f;
+}
+
+.bannerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bannerIcon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.bannerTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+.banner.analyzed .bannerTitle {
+  color: var(--text);
+}
+.banner.insufficient .bannerTitle {
+  color: var(--text);
+}
+.bannerSub {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* analyzed summary badges */
+.summaryBadges {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.summaryBadge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+}
+
+/* missing-section chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--insuf-border);
+  color: var(--text-pill);
+}
+
+/* ── note body ───────────────────────────────────────────────────────────── */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.hl {
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.hl.symptom {
+  background: rgba(240, 68, 56, 0.16);
+}
+.hl.disease {
+  background: rgba(167, 139, 250, 0.18);
+}
+.hl.finding {
+  background: rgba(34, 211, 238, 0.16);
+}
+.hl.other {
+  background: rgba(245, 158, 11, 0.16);
+}

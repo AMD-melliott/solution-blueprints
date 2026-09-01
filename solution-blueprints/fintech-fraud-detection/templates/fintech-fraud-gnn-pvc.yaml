@@ -1,0 +1,16 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "fintech.complexName" . }}-gnn-artifacts
+  labels:
+    {{- include "fintech.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.artifacts.gnn.storageSize }}

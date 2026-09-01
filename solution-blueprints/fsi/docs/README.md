@@ -52,13 +52,13 @@ This blueprint can be deployed on **AMD Instinct** (default), **AMD EPYC**, and 
 | Resource | Instinct | Radeon | EPYC |
 |--|--|--|--|
 | GPUs | 1 | 1 | — |
-| CPUs | 5 CPU cores | 5 CPU cores | 189 CPU cores |
-| RAM | 68 Gi | 36 Gi | 132 Gi |
+| CPUs | 5 CPU cores | 5 CPU cores | 189 CPU cores (default) |
+| RAM | 68 GiB | 36 GiB | 132 GiB |
 
 To deploy to the Kubernetes cluster, ensure the following prerequisites are met:
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/): Installed and configured to communicate with the cluster
-- [Helm](https://helm.sh/docs/intro/install/) 3.17 or higher: Installed on your local machine
+- [Helm](https://helm.sh/docs/intro/install/) 3.16 – 4.2.0: Installed on your local machine
 
 ### Deployment
 
@@ -89,8 +89,7 @@ namespace="my-namespace"
 kubectl create namespace $namespace
 kubectl create secret generic hf-token --from-literal=hf-token=<YOUR_HF_TOKEN> -n $namespace
 
-helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-fsi --untar
-helm template $name ./aimsb-fsi \
+helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-fsi \
   --set global.platform=epyc \
   --set llm.cpus=188 \
   --set llm.memory=128 \
@@ -98,6 +97,8 @@ helm template $name ./aimsb-fsi \
   --set llm.env_vars.HF_TOKEN.key=hf-token \
   | kubectl apply -f - -n $namespace
 ```
+
+Specify the CPU and memory resources here depending on your chosen LLM, hardware configuration, and performance needs.
 
 > **Performance note**: On multi-socket EPYC nodes, configure the kubelet for NUMA alignment (CPU Manager `static`, Topology Manager `single-numa-node`, Memory Manager `Static`); otherwise the LLM's CPUs and memory can land on different NUMA nodes and vLLM runs effectively single-threaded.
 

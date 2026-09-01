@@ -52,13 +52,13 @@ This blueprint can be deployed on **AMD Instinct** (default), **AMD EPYC**, and 
 | Resource | Instinct | Radeon | EPYC |
 |--|--|--|--|
 | GPUs | 2 | 2 | — |
-| CPUs | 11 CPU cores | 11 CPU cores | 223 CPU cores |
-| RAM | 268 Gi | 76 Gi | 172 Gi |
+| CPUs | 11 CPU cores | 11 CPU cores | 223 CPU cores (default) |
+| RAM | 268 GiB | 76 GiB | 172 GiB |
 
 To deploy to the Kubernetes cluster, ensure the following prerequisites are met:
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/): Installed and configured to communicate with the cluster
-- [Helm](https://helm.sh/docs/intro/install/) 3.17 or higher: Installed on your local machine
+- [Helm](https://helm.sh/docs/intro/install/) 3.16 – 4.2.0: Installed on your local machine
 
 ### Deployment
 
@@ -87,8 +87,7 @@ namespace="my-namespace"
 kubectl create namespace $namespace
 kubectl create secret generic hf-token --from-literal=hf-token=<YOUR_HF_TOKEN> -n $namespace
 
-helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-talk-to-your-documents --untar
-helm template $name ./aimsb-talk-to-your-documents \
+helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-talk-to-your-documents \
   --set global.platform=epyc \
   --set llm.cpus=188 \
   --set llm.memory=128 \
@@ -98,6 +97,8 @@ helm template $name ./aimsb-talk-to-your-documents \
   --set embedding.env_vars.HF_TOKEN.key=hf-token \
   | kubectl apply -f - -n $namespace
 ```
+
+Specify the CPU and memory resources here depending on your chosen LLM, hardware configuration, and performance needs.
 
 > **Resource sizing note**: Depending on your node it may be necessary to resize the LLM and embedding model resources. For example, the following parameters can be set to limit the embedding model's cpu count and memory:
 > ```bash

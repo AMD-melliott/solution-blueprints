@@ -23,7 +23,7 @@ cd solution-blueprints/med-assist
 Requirements:
 
 - kubectl configured and pointing at your target cluster
-- Helm 3.17 or higher installed
+- Helm 3.16 – 4.2.0 installed
 - cluster-admin or rights to create ClusterRole, ClusterRoleBinding, and CRDs.
 
 The script installs:
@@ -87,8 +87,6 @@ By default, the chart deploys LiveKit, LLM, and Qwen ASR dependencies in additio
 
 The chart ships defaults for two platforms, selected with `--set global.platform=<platform>`: `instinct` (GPU, the default) and `radeon` (GPU). Each sets a matching AIM image and resource profile for the LLM; inspect them with `helm show values . --jsonpath '{.llm.platformDefaults}'`.
 
-> **Helm note**: Built and tested on Helm 3.17 or higher. On Helm v4, if the piped `kubectl apply` is rejected, run `helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-med-assist --untar` first and template the local `./aimsb-med-assist` directory instead.
-
 ### AMD Instinct (GPU, default)
 
 This is the default platform; the deployment commands in this guide run the LLM on AMD Instinct GPUs with no extra flags. The default LLM is Meta Llama 3.3 70B Instruct (`aim-meta-llama-llama-3-3-70b-instruct`).
@@ -111,6 +109,15 @@ helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-med-assist 
   --namespace $namespace \
   | kubectl apply -f - -n $namespace
 ```
+
+> **Known issue (Helm 4.2.1+):** Helm 4.2.1 and newer leak `Pulled:`/`Digest:` metadata to stdout ([helm#32215](https://github.com/helm/helm/issues/32215)), which breaks the piped `helm template … | kubectl apply -f -`. Until the fix ships, either use Helm **3.16 – 4.2.0**, or split the pull and template steps, e.g.:
+>
+> ```bash
+> helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-med-assist --untar
+> helm template $name ./aimsb-med-assist \
+>   # …same flags as the piped command above…
+>   | kubectl apply -f - -n $namespace
+> ```
 
 ## LiveKit WebSocket URL
 

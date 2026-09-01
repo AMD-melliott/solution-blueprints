@@ -1,0 +1,33 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+:root,
+[data-theme="dark"] {
+  --bg: #0c0e12;
+  --surface: #13161b;
+  --surface2: #13161b;
+  --border: #232830;
+  --border-b: #2e353f;
+  --text: #f7f7f7;
+  --text-half-dim: #d4d4d8;
+  --text-dim: #94979c;
+  --green: #75e0a7;
+  --green-half-dim: #10482f;
+  --green-dim: #053321;
+  --red: #f97066;
+  --red-bright: #fda29b;
+  --red-dim: #55160c;
+  --amber: #f79009;
+  --amber-bright: #fdb022;
+  --amber-half-dim: #5f3b0f;
+  --amber-dim: #4e1d09;
+  --blue: #0086c9;
+  --blue-bright: #7cd4fd;
+  --blue-dim: #062c41;
+  --purple: #a78bfa;
+  --purple-dim: rgba(167, 139, 250, 0.12);
+  --shadow: none;
+}

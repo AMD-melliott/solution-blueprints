@@ -1,0 +1,28 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: "${REGISTRY:?Must set REGISTRY}/${ORG:?Must set ORG}/image-aimsb-fintech-fraud-detection-backend:${TAG:?Must set TAG}"
+
+  middleware:
+    build:
+      context: ../
+      dockerfile: middleware/Dockerfile
+    image: "${REGISTRY:?Must set REGISTRY}/${ORG:?Must set ORG}/image-aimsb-fintech-fraud-detection-middleware:${TAG:?Must set TAG}"
+
+  gnn:
+    build:
+      context: ../backend
+      dockerfile: gnn/Dockerfile
+    image: "${REGISTRY:?Must set REGISTRY}/${ORG:?Must set ORG}/image-aimsb-fintech-fraud-detection-gnn:${TAG:?Must set TAG}"
+
+  xgboost:
+    build:
+      context: ../backend
+      dockerfile: xgb/Dockerfile
+    image: "${REGISTRY:?Must set REGISTRY}/${ORG:?Must set ORG}/image-aimsb-fintech-fraud-detection-xgb:${TAG:?Must set TAG}"

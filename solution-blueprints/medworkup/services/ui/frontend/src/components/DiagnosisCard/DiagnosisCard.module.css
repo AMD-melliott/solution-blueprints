@@ -1,0 +1,129 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.card:last-child {
+  margin-bottom: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.rank {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+}
+.confDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.confDot.high {
+  background: var(--green);
+}
+.confDot.mid {
+  background: var(--amber);
+}
+.confDot.low {
+  background: var(--red);
+}
+
+/* confidence bar (tier-colored, no numeric %) */
+.confRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.barTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.barFill.high {
+  background: var(--green);
+}
+.barFill.mid {
+  background: var(--amber);
+}
+.barFill.low {
+  background: var(--red);
+}
+
+.reasoning {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* consistency callout */
+.callout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.calloutIcon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.evidenceLabel {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-pill);
+  line-height: 1.4;
+}

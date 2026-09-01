@@ -19,8 +19,6 @@ This blueprint supports **AMD Instinct** (default) and **AMD EPYC** platforms. U
 
 The chart ships defaults for two platforms, selected with `--set global.platform=<platform>`: `instinct` (GPU, the default) and `epyc` (CPU). Each sets a matching AIM image and resource profile; inspect them with `helm show values . --jsonpath '{.llm.platformDefaults}'`.
 
-> **Helm note**: Built and tested on Helm 3.17 or higher. On Helm v4, if the piped `kubectl apply` is rejected, run `helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-codedocs --untar` first and template the local `./aimsb-codedocs` directory instead.
-
 ### AMD Instinct (GPU, default)
 
 ```bash
@@ -29,6 +27,15 @@ namespace="my-namespace"
 helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-codedocs \
   | kubectl apply -f - -n $namespace
 ```
+
+> **Known issue (Helm 4.2.1+):** Helm 4.2.1 and newer leak `Pulled:`/`Digest:` metadata to stdout ([helm#32215](https://github.com/helm/helm/issues/32215)), which breaks the piped `helm template … | kubectl apply -f -`. Until the fix ships, either use Helm **3.16 – 4.2.0**, or split the pull and template steps, e.g.:
+>
+> ```bash
+> helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-codedocs --untar
+> helm template $name ./aimsb-codedocs \
+>   # …same flags as the piped command above…
+>   | kubectl apply -f - -n $namespace
+> ```
 
 ### AMD EPYC (CPU)
 
@@ -40,8 +47,7 @@ namespace="my-namespace"
 kubectl create namespace $namespace
 kubectl create secret generic hf-token --from-literal=hf-token=<YOUR_HF_TOKEN> -n $namespace
 
-helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-codedocs --untar
-helm template $name ./aimsb-codedocs \
+helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-codedocs \
   --set global.platform=epyc \
   --set llm.cpus=188 \
   --set llm.memory=128 \

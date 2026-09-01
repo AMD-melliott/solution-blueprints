@@ -1,0 +1,136 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  cursor: help;
+}
+/* Label text inherits all font styling from the call-site wrapper
+   (.thLabel / .k / .otHeadLabel / .titleLabel) — InfoTip adds none. */
+.labelText {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 5px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color 0.12s;
+}
+.icon:hover,
+.icon[aria-expanded="true"] {
+  color: var(--text);
+}
+.icon:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Popup — portaled to <body>, positioned with fixed left/top from JS. */
+.popup {
+  position: fixed;
+  z-index: 60;
+  width: max-content;
+  max-width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border-b);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  text-align: left;
+  white-space: normal;
+  cursor: default;
+  animation: tipFade 0.12s ease-out;
+}
+
+@keyframes tipFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Caret — positioned horizontally by --caret-left (set inline from JS). */
+.popup::after {
+  content: "";
+  position: absolute;
+  left: var(--caret-left, 50%);
+  margin-left: -4px;
+  width: 8px;
+  height: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-b);
+  transform: rotate(45deg);
+}
+.placeTop::after {
+  bottom: -5px;
+  border-top: none;
+  border-left: none;
+}
+.placeBottom::after {
+  top: -5px;
+  border-bottom: none;
+  border-right: none;
+}
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1;
+}
+.close:hover {
+  color: var(--text);
+  background: var(--border);
+}
+
+.popTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+  padding-right: 14px;
+}
+.popBody {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.popBody strong {
+  color: var(--text-half-dim);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popup {
+    animation: none;
+  }
+}

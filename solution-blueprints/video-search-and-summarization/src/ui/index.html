@@ -1,0 +1,707 @@
+<!--
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AMD Video Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111820'/%3E%3Cpath d='M13 10.5l9 5.5-9 5.5z' fill='%2300c2b8'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #0b0e13; --panel: #141a22; --panel2: #1b232e; --border: #263041;
+    --text: #e6edf3; --muted: #8b97a7; --accent: #ed1c24; --accent2: #25b3a6;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+  header { display: flex; align-items: center; gap: 12px; padding: 14px 22px;
+    border-bottom: 1px solid var(--border); background: linear-gradient(90deg,#10151c,#0b0e13); }
+  header .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  header h1 { font-size: 18px; font-weight: 650; margin: 0; letter-spacing: .3px; }
+  header .sub { color: var(--muted); font-size: 12.5px; margin-left: 4px; }
+  header .spacer { flex: 1; }
+  header .models { color: var(--muted); font-size: 12px; }
+  header .models b { color: var(--accent2); font-weight: 600; }
+  .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 53px); }
+  .sidebar { border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; background: #0e131a; }
+  .main { padding: 18px 22px; overflow-y: auto; }
+  .uploader { border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 18px;
+    text-align: center; cursor: pointer; transition: .15s; margin-bottom: 10px; }
+  .uploader:hover, .uploader.drag { border-color: var(--accent2); background: #11181f; }
+  .uploader .big { font-size: 13.5px; } .uploader .small { color: var(--muted); font-size: 11.5px; margin-top: 5px; }
+  .seclabel { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 14px 2px 10px; }
+  .vlist { display: flex; flex-direction: column; gap: 8px; }
+  .vcard { display: flex; gap: 10px; padding: 8px; border: 1px solid var(--border); border-radius: 10px;
+    cursor: pointer; transition: .12s; align-items: center; }
+  .vcard:hover { border-color: var(--accent2); background: #131b24; }
+  .vcard.active { border-color: var(--accent); background: #1a1416; }
+  .vcard img { width: 64px; height: 40px; object-fit: cover; border-radius: 6px; background: #000; flex-shrink: 0; }
+  .vcard .vinfo { overflow: hidden; flex: 1; } .vcard .vname { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vcard .vmeta { font-size: 11px; color: var(--muted); }
+  .vacts { display: flex; gap: 1px; flex-shrink: 0; }
+  .vact { background: transparent; border: none; color: var(--muted); padding: 5px; cursor: pointer; border-radius: 6px; display: flex; align-items: center; }
+  .vact svg { width: 16px; height: 16px; }
+  .vact.edit:hover { color: #fff; background: var(--accent2); }
+  .vact.del:hover { color: #fff; background: var(--accent); }
+  .vact.dl:hover { color: #fff; background: var(--accent2); }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 30px 10px; }
+  .player { display: block; width: 100%; max-height: 420px; border-radius: var(--radius); background: #000; border: 1px solid var(--border); }
+  .vtitle { font-size: 20px; font-weight: 650; margin: 2px 0 14px; }
+  .vhead { display: flex; align-items: center; gap: 12px; margin: 2px 0 14px; }
+  .vhead .vtitle { margin: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #reprocBtn { flex-shrink: 0; }
+  .tabs { display: flex; gap: 6px; margin: 18px 0 14px; border-bottom: 1px solid var(--border); }
+  .tab { padding: 9px 16px; cursor: pointer; color: var(--muted); font-size: 13.5px; font-weight: 600;
+    border-bottom: 2px solid transparent; }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .panel { display: none; } .panel.active { display: block; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  /* Keep buttons at their content width and let inputs shrink, so a long placeholder can't
+     squeeze a button to zero width (which makes its label overflow onto the input). */
+  .row > button { flex-shrink: 0; }
+  .row > input { min-width: 0; }
+  input[type=text], input[type=number] { flex: 1; padding: 11px 13px; border-radius: 9px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); font-size: 14px; outline: none; }
+  input[type=text]:focus, input[type=number]:focus { border-color: var(--accent2); }
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: var(--muted); user-select: none; }
+  .switch input { display: none; }
+  .switch .sw-track { width: 42px; height: 22px; border-radius: 11px; background: var(--panel2); border: 1px solid var(--border); position: relative; transition: .15s; flex-shrink: 0; }
+  .switch .sw-knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: .15s; }
+  .switch input:checked + .sw-track { background: var(--accent2); border-color: var(--accent2); }
+  .switch input:checked + .sw-track .sw-knob { left: 22px; background: #fff; }
+  textarea, select { width: 100%; padding: 11px 13px; border-radius: 9px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); font-size: 14px; outline: none; font-family: inherit; }
+  textarea { resize: vertical; line-height: 1.5; margin-bottom: 10px; }
+  textarea:focus, select:focus { border-color: var(--accent2); }
+  .fld { display: block; font-size: 12px; color: var(--muted); margin: 8px 2px 5px; }
+  #sumObjects { width: 100%; margin-bottom: 12px; }
+  button { padding: 11px 18px; border-radius: 9px; border: none; background: var(--accent); color: #fff;
+    font-weight: 600; font-size: 13.5px; cursor: pointer; transition: .12s; }
+  button:hover { filter: brightness(1.1); } button:disabled { opacity: .5; cursor: not-allowed; }
+  button.ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  .chat { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+  .qa { border: 1px solid var(--border); border-radius: 11px; padding: 13px 15px; background: var(--panel); }
+  .qa.latest { border-color: var(--accent2); box-shadow: inset 0 0 0 1px var(--accent2); }
+  .qa .q { font-weight: 650; color: var(--text); margin-bottom: 9px; }
+  .qa .q .qbadge { color: var(--accent); font-weight: 700; margin-right: 8px; }
+  .qa .a { font-size: 14px; line-height: 1.55; white-space: pre-wrap; color: var(--text); }
+  .citations { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 11px; }
+  .cite { display: flex; align-items: center; gap: 7px; background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 4px 9px 4px 4px; cursor: pointer; font-size: 11.5px; color: var(--muted); }
+  .cite:hover { border-color: var(--accent2); color: var(--text); }
+  .cite img { width: 46px; height: 30px; object-fit: cover; border-radius: 5px; background: #000; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 14px; }
+  .chunk { padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; line-height: 1.5; }
+  .chunk:last-child { border-bottom: none; }
+  .chunk .ts { color: var(--accent2); font-weight: 600; font-family: ui-monospace, monospace; margin-right: 8px; }
+  .md h1 { font-size: 22px; } .md h2 { font-size: 16px; color: var(--accent2); margin-top: 18px; }
+  .md ul { padding-left: 20px; } .md li { margin: 4px 0; line-height: 1.5; } .md p { line-height: 1.6; }
+  .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid #ffffff55; border-top-color: #fff;
+    border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 7px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pring { vertical-align: -3px; margin-right: 6px; transform: rotate(-90deg); }
+  .pring .pr-bg { fill: none; stroke: currentColor; opacity: .25; stroke-width: 2.5; }
+  .pring .pr-fg { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round;
+    stroke-dasharray: 43.98; stroke-dashoffset: 43.98; transition: stroke-dashoffset .25s linear; }
+  .pr-pct { font-variant-numeric: tabular-nums; }
+  .uprog { height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 12px; }
+  .uprog-bar { height: 100%; width: 0%; background: var(--accent2); transition: width .12s linear; }
+  .hint { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+  .archive { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+  .archive input { accent-color: var(--accent2); width: 15px; height: 15px; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel2); border: 1px solid var(--border);
+    padding: 12px 18px; border-radius: 10px; font-size: 13px; opacity: 0; transition: .25s; z-index: 60; }
+  .toast.show { opacity: 1; }
+  .modal { position: fixed; inset: 0; background: #000a; display: none; align-items: center; justify-content: center; z-index: 50; }
+  .modal.show { display: flex; }
+  .modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; width: 580px; max-width: 92vw; }
+  .modal-box h2 { margin: 0 0 4px; font-size: 17px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="dot"></span>
+  <h1>AMD Video Intelligence</h1>
+  <span class="sub">Search, summarize, and track objects in recorded video, with answers cited to the exact moment</span>
+  <span class="spacer"></span>
+  <span class="models">VLM <b id="vlmModel">-</b> &nbsp; LLM <b id="llmModel">-</b> &nbsp; Object Detection <b id="detModel">-</b></span>
+  <button class="ghost" id="dpBtn" style="margin-left:14px;padding:7px 13px;font-size:12.5px">Settings</button>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="uploader" id="uploader">
+      <div class="big" id="upText">Drop a video or click to upload</div>
+      <div class="small">mp4 / mov / webm</div>
+      <div id="uProg" style="display:none">
+        <div class="uprog"><div class="uprog-bar" id="uBar"></div></div>
+        <div class="small" id="uPct" style="margin-top:6px">0%</div>
+      </div>
+      <input type="file" id="fileInput" accept="video/*" style="display:none" />
+    </div>
+    <div class="seclabel">Videos</div>
+    <div class="vlist" id="vlist"><div class="empty">No videos yet</div></div>
+  </aside>
+  <main class="main">
+    <div id="welcome" class="empty" style="margin-top:80px">
+      Upload a video and select it to ask questions or generate a timestamped analysis.
+    </div>
+    <div id="workspace" style="display:none">
+      <div class="vhead">
+        <div class="vtitle" id="vtitle"></div>
+        <span class="hint" id="vparams" style="margin:0;white-space:nowrap"></span>
+        <button class="ghost" id="reprocBtn" title="Re-caption every segment with the VLM and rebuild the index">Reprocess (VLM)</button>
+      </div>
+      <video class="player" id="player" controls></video>
+      <video class="player" id="playerTracked" controls preload="auto" style="display:none"></video>
+      <div id="viewToggle" style="display:none;margin-top:10px">
+        <label class="switch">
+          <input type="checkbox" id="trackSwitch" />
+          <span class="sw-track"><span class="sw-knob"></span></span>
+          <span>Tracking overlay: <b id="trackState">OFF</b></span>
+        </label>
+      </div>
+      <div class="tabs">
+        <div class="tab active" data-tab="ask">Ask</div>
+        <div class="tab" data-tab="summary">Summary</div>
+        <div class="tab" data-tab="track">Track</div>
+      </div>
+      <div class="panel active" data-panel="ask">
+        <div class="row">
+          <input type="text" id="qinput" placeholder="Ask anything about the video..." />
+          <button id="askBtn">Ask</button>
+        </div>
+        <label class="archive"><input type="checkbox" id="archiveChk" /> Search across all videos (archive-wide)</label>
+        <div class="hint">Answers are grounded in retrieved segments and cite the timestamps they rely on.</div>
+        <div class="chat" id="chat"></div>
+      </div>
+      <div class="panel" data-panel="summary">
+        <label class="fld">Summarization prompt</label>
+        <textarea id="sumPrompt" rows="3">Summarize the video's key events in chronological order, with timestamps. Note any incidents such as collisions, near-misses, or unusual activity.</textarea>
+        <button id="sumBtn">Analyze video</button>
+        <div class="hint">Builds a timestamped analysis (overview, timeline, key observations) via recursive summarization.</div>
+        <div id="sumOut"></div>
+      </div>
+      <div class="panel" data-panel="track">
+        <div class="hint" style="margin-bottom:10px">Detects and tracks objects across the video, draws boxes + IDs on a "Tracking overlay" copy, and makes the tracked objects queryable in Ask.</div>
+        <label class="fld">Objects to track (comma-separated; leave blank to track all common objects)</label>
+        <div class="row">
+          <input type="text" id="trkObjects" placeholder="e.g. person, car, bus, truck" />
+          <button id="trkBtn">Track</button>
+        </div>
+        <div id="trkOut"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal" id="dpModal">
+  <div class="modal-box">
+    <h2>Settings</h2>
+    <p class="hint" style="margin-top:2px">A single instruction that cascades to captioning, summaries, and Q&amp;A.</p>
+    <label class="fld">Preset</label>
+    <select id="dpPreset"></select>
+    <label class="fld">Prompt</label>
+    <textarea id="dpText" rows="7"></textarea>
+    <label class="fld">Processing (applies to new uploads, and to a video when you Reprocess it)</label>
+    <div class="row" style="gap:14px;margin-bottom:6px">
+      <div style="flex:1">
+        <span class="hint" style="margin:0">Chunk length (seconds)</span>
+        <input type="number" id="dpChunk" min="2" max="120" step="1" style="width:100%;margin-top:4px" />
+      </div>
+      <div style="flex:1">
+        <span class="hint" style="margin:0">Keyframes per chunk (frames sent to the VLM)</span>
+        <input type="number" id="dpFrames" min="1" max="16" step="1" style="width:100%;margin-top:4px" />
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:4px">
+      <button class="ghost" id="dpReset" style="margin-right:auto">Reset to default</button>
+      <button class="ghost" id="dpClose">Cancel</button>
+      <button id="dpSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const api = (p, o) => fetch(p, o).then(async r => { if (!r.ok) throw new Error((await r.json().catch(()=>({}))).detail || r.status); return r.json(); });
+let current = null;
+const $ = s => document.querySelector(s);
+
+const PRESETS = {
+  "General": "You are a precise video analyst. Describe what is visible accurately and objectively, noting people, vehicles, objects, actions, and any notable or unusual events, with timestamps.",
+  "Traffic & intersection safety": "You are a traffic-safety video analyst. Focus on vehicles, pedestrians, signals, and road markings. Identify right-of-way, violations, collisions, near-misses, and unsafe maneuvers, always noting timestamps and the vehicles or people involved.",
+  "Retail & loss prevention": "You are a retail loss-prevention analyst. Focus on customers, staff, merchandise, shelves, and checkout areas. Note item handling, concealment, unattended items, queues, and any suspicious or unusual behavior, with timestamps.",
+  "Warehouse & worker safety": "You are an industrial safety analyst. Focus on workers, forklifts, machinery, PPE, and restricted zones. Identify unsafe proximity, missing PPE, spills, blocked exits, and incidents, with timestamps."
+};
+
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 3000); }
+
+function mdToHtml(md) {
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const lines = md.split("\n"); let html = "", inList = false;
+  for (let ln of lines) {
+    let t = esc(ln);
+    t = t.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    if (/^### /.test(ln)) { if(inList){html+="</ul>";inList=false;} html += "<h3>"+t.slice(4)+"</h3>"; }
+    else if (/^## /.test(ln)) { if(inList){html+="</ul>";inList=false;} html += "<h2>"+t.slice(3)+"</h2>"; }
+    else if (/^# /.test(ln)) { if(inList){html+="</ul>";inList=false;} html += "<h1>"+t.slice(2)+"</h1>"; }
+    else if (/^[-*] /.test(ln)) { if(!inList){html+="<ul>";inList=true;} html += "<li>"+t.replace(/^[-*] /,"")+"</li>"; }
+    else if (ln.trim()==="") { if(inList){html+="</ul>";inList=false;} }
+    else { if(inList){html+="</ul>";inList=false;} html += "<p>"+t+"</p>"; }
+  }
+  if (inList) html += "</ul>";
+  return html;
+}
+
+async function loadHealth() {
+  try { const h = await api("/api/health"); $("#vlmModel").textContent = h.vlm_model.split("/").pop(); $("#llmModel").textContent = h.llm_model.split("/").pop(); $("#detModel").textContent = (h.track_model || "-").replace(".pt", ""); } catch(e){}
+}
+
+let _pollTimer = null;
+function maybePollIndexing(videos) {
+  const pending = videos.some(v => !v.chunk_seconds);
+  if (pending && !_pollTimer) _pollTimer = setInterval(loadVideos, 8000);
+  else if (!pending && _pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+}
+
+async function loadVideos() {
+  const { videos } = await api("/api/videos");
+  const el = $("#vlist");
+  if (!videos.length) { el.innerHTML = '<div class="empty">No videos yet</div>'; return; }
+  el.innerHTML = "";
+  for (const v of videos) {
+    const d = document.createElement("div");
+    d.className = "vcard" + (current && current.id===v.id ? " active":"");
+    d.innerHTML = `<img src="/api/videos/${v.id}/thumbnail" onerror="this.style.visibility='hidden'"/>
+      <div class="vinfo"><div class="vname">${v.name}</div><div class="vmeta">${v.duration.toFixed(0)}s${v.chunk_seconds ? "" : ' &middot; <span style="color:var(--accent2)">indexing&hellip;</span>'}</div></div>
+      <div class="vacts">
+        <button class="vact dl" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
+        <button class="vact edit" title="Rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+        <button class="vact del" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+      </div>`;
+    d.onclick = () => selectVideo(v);
+    d.querySelector(".vact.dl").onclick = (e) => { e.stopPropagation(); downloadVideo(v); };
+    d.querySelector(".vact.edit").onclick = (e) => { e.stopPropagation(); renameVideo(v); };
+    d.querySelector(".vact.del").onclick = (e) => { e.stopPropagation(); deleteVideo(v); };
+    el.appendChild(d);
+  }
+  maybePollIndexing(videos);
+}
+
+function selectVideo(v) {
+  current = v;
+  $("#welcome").style.display = "none";
+  $("#workspace").style.display = "block";
+  $("#vtitle").textContent = v.name;
+  const rbtn = $("#reprocBtn"); rbtn.disabled = false; rbtn.textContent = "Reprocess (VLM)";
+  if (v.chunk_seconds && v.frames_per_chunk) {
+    $("#vparams").textContent = `${Math.round(v.chunk_seconds)}s chunks, ${v.frames_per_chunk} frames`;
+  } else {
+    $("#vparams").textContent = "Indexing\u2026";
+    showIndexRing(null);
+    watchIndexing(v.id);
+  }
+  $("#player").src = `/api/videos/${v.id}/stream`;
+  $("#player").style.display = "block";
+  $("#playerTracked").removeAttribute("src"); $("#playerTracked").load(); $("#playerTracked").style.display = "none";
+  $("#chat").innerHTML = ""; $("#sumOut").innerHTML = ""; $("#trkOut").innerHTML = "";
+  $("#viewToggle").style.display = "none";
+  $("#trackSwitch").checked = false; $("#trackState").textContent = "OFF";
+  loadTracks(v.id);
+  loadAnalysis(v.id);
+  loadVideos();
+}
+
+async function seekTo(c) {
+  if (!current || current.id !== c.video_id) {
+    try { const rec = await api(`/api/videos/${c.video_id}`); selectVideo(rec); } catch(e) { return; }
+    $("#player").addEventListener("loadedmetadata", () => { $("#player").currentTime = c.start; }, { once: true });
+  } else {
+    $("#player").currentTime = c.start; $("#player").play().catch(()=>{});
+  }
+  $("#player").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function downloadVideo(v) {
+  // Download the tracking-overlay copy when the switch is on for the open video; else the original.
+  const tracked = !!(current && current.id === v.id && document.getElementById("trackSwitch") && document.getElementById("trackSwitch").checked);
+  const a = document.createElement("a");
+  a.href = `/api/videos/${v.id}/${tracked ? "tracked" : "stream"}`;
+  a.download = `${v.name}${tracked ? "-tracked" : ""}.mp4`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+async function renameVideo(v) {
+  const name = prompt("Rename video", v.name);
+  if (name === null) return;
+  const trimmed = name.trim();
+  if (!trimmed || trimmed === v.name) return;
+  try {
+    const rec = await api(`/api/videos/${v.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: trimmed }) });
+    if (current && current.id === v.id) { current = rec; $("#vtitle").textContent = rec.name; }
+    toast("Renamed");
+    await loadVideos();
+  } catch (e) { toast("Rename failed: " + e.message); }
+}
+
+async function deleteVideo(v) {
+  if (!confirm(`Delete "${v.name}"? This removes the video and its analysis.`)) return;
+  try {
+    await api(`/api/videos/${v.id}`, { method: "DELETE" });
+    if (current && current.id === v.id) { current = null; $("#workspace").style.display = "none"; $("#welcome").style.display = "block"; }
+    toast("Deleted");
+    await loadVideos();
+  } catch (e) { toast("Delete failed: " + e.message); }
+}
+
+function uploadFile(file) {
+  const upText = $("#upText"), uProg = $("#uProg"), uBar = $("#uBar"), uPct = $("#uPct");
+  upText.textContent = "Uploading " + file.name;
+  uProg.style.display = "block"; uBar.style.width = "0%"; uPct.textContent = "0%";
+  const reset = () => { upText.textContent = "Drop a video or click to upload"; uProg.style.display = "none"; uBar.style.width = "0%"; };
+  const fd = new FormData(); fd.append("file", file);
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/api/videos");
+  xhr.upload.onprogress = (e) => {
+    if (!e.lengthComputable) return;
+    const pct = Math.round(100 * e.loaded / e.total);
+    uBar.style.width = pct + "%";
+    uPct.textContent = pct < 100 ? pct + "%" : "Finalizing\u2026";
+  };
+  xhr.onload = () => {
+    reset();
+    if (xhr.status >= 200 && xhr.status < 300) {
+      let rec = null; try { rec = JSON.parse(xhr.responseText); } catch (e) {}
+      if (rec && rec.id) { toast("Uploaded: " + rec.name); loadVideos(); selectVideo(rec); }
+      else { toast("Uploaded"); loadVideos(); }
+    } else {
+      let msg = xhr.statusText || ("HTTP " + xhr.status);
+      try { msg = JSON.parse(xhr.responseText).detail || msg; } catch (e) {}
+      toast("Upload failed: " + msg);
+    }
+  };
+  xhr.onerror = () => { reset(); toast("Upload failed"); };
+  xhr.send(fd);
+}
+
+const up = $("#uploader"), fi = $("#fileInput");
+up.onclick = () => fi.click();
+fi.onchange = () => { if (fi.files[0]) uploadFile(fi.files[0]); fi.value = ""; };
+up.ondragover = e => { e.preventDefault(); up.classList.add("drag"); };
+up.ondragleave = () => up.classList.remove("drag");
+up.ondrop = e => { e.preventDefault(); up.classList.remove("drag"); if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); };
+
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  document.querySelector(`.panel[data-panel="${t.dataset.tab}"]`).classList.add("active");
+});
+
+async function doAsk() {
+  const q = $("#qinput").value.trim(); if (!q || !current) return;
+  const archive = $("#archiveChk").checked;
+  $("#qinput").value = "";
+  const chat = $("#chat");
+  // Newest exchange goes to the top; older ones move down. No scrolling needed.
+  chat.querySelectorAll(".qa.latest").forEach(el => el.classList.remove("latest"));
+  const card = document.createElement("div"); card.className = "qa latest";
+  const qEl = document.createElement("div"); qEl.className = "q";
+  qEl.innerHTML = '<span class="qbadge">Q</span>';
+  qEl.appendChild(document.createTextNode(q));
+  const aEl = document.createElement("div"); aEl.className = "a";
+  aEl.innerHTML = '<span class="spinner"></span>Retrieving segments...';
+  card.appendChild(qEl); card.appendChild(aEl);
+  chat.insertBefore(card, chat.firstChild);
+  const renderCites = (citations) => {
+    if (!citations || !citations.length) return;
+    const cc = document.createElement("div"); cc.className = "citations";
+    for (const c of citations) {
+      const el = document.createElement("div"); el.className = "cite";
+      el.innerHTML = `<img src="/api/videos/${c.video_id}/keyframe/${c.segment_id}" onerror="this.style.display='none'"/>
+        <span>${c.video} &middot; ${Math.round(c.start)}-${Math.round(c.end)}s</span>`;
+      el.onclick = () => seekTo(c);
+      cc.appendChild(el);
+    }
+    card.appendChild(cc);
+  };
+  try {
+    const resp = await fetch(`/api/videos/${current.id}/ask/stream`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ question: q, archive })
+    });
+    if (!resp.ok || !resp.body) throw new Error("HTTP " + resp.status);
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "", answer = "", citations = [], started = false;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+        if (!line.trim()) continue;
+        let ev; try { ev = JSON.parse(line); } catch (e) { continue; }
+        if (ev.type === "citations") { citations = ev.citations || []; }
+        else if (ev.type === "token") {
+          if (!started) { aEl.textContent = ""; started = true; }
+          answer += ev.text; aEl.textContent = answer;
+        }
+        else if (ev.type === "error") { aEl.textContent = "Error: " + ev.message; started = true; }
+      }
+    }
+    if (!started) aEl.textContent = "(no answer)";
+    renderCites(citations);
+  } catch (e) { aEl.textContent = "Error: " + e.message; }
+}
+$("#askBtn").onclick = doAsk;
+$("#qinput").addEventListener("keydown", e => { if (e.key==="Enter") doAsk(); });
+
+const RING_HTML = '<svg class="pring" width="16" height="16" viewBox="0 0 18 18"><circle class="pr-bg" cx="9" cy="9" r="7"></circle><circle class="pr-fg" cx="9" cy="9" r="7"></circle></svg><span class="pr-pct">0%</span>';
+const RING_CIRC = 2 * Math.PI * 7;
+
+function setRing(btn, pct) {
+  const fg = btn.querySelector(".pr-fg");
+  const lab = btn.querySelector(".pr-pct");
+  if (!fg) return;
+  const p = Math.max(0, Math.min(100, pct));
+  fg.style.strokeDashoffset = RING_CIRC * (1 - p / 100);
+  if (lab) lab.textContent = Math.round(p) + "%";
+}
+
+async function pollProgress(kind, id, btn, stop) {
+  while (!stop.done) {
+    try {
+      const p = (await api(`/api/videos/${id}/progress`))[kind] || {};
+      if (p.total > 0) setRing(btn, 100 * (p.current || 0) / p.total);
+    } catch (e) {}
+    if (stop.done) break;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+}
+
+function showIndexRing(pct) {
+  const btn = $("#reprocBtn");
+  if (!btn.querySelector(".pr-fg")) { btn.disabled = true; btn.innerHTML = RING_HTML; }
+  if (pct != null) setRing(btn, pct);
+}
+
+const _indexWatching = new Set();
+async function watchIndexing(id) {
+  if (_indexWatching.has(id)) return;
+  _indexWatching.add(id);
+  let status = "", empty = 0;
+  try {
+    for (let i = 0; i < 3600; i++) {
+      let p = {};
+      try { p = (await api(`/api/videos/${id}/progress`)).index || {}; } catch (e) {}
+      status = p.status || "";
+      if (current && current.id === id && p.total > 0) showIndexRing(100 * (p.current || 0) / p.total);
+      if (status === "done" || status === "error") break;
+      if (!status) {
+        empty++;
+        try { const vv = await api(`/api/videos/${id}`); if (vv.chunk_seconds) { status = "done"; break; } } catch (e) {}
+        if (empty > 5) break;
+      } else { empty = 0; }
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  } finally { _indexWatching.delete(id); }
+  try {
+    const v = await api(`/api/videos/${id}`);
+    if (current && current.id === id) {
+      current = v;
+      $("#vparams").textContent = (v.chunk_seconds && v.frames_per_chunk)
+        ? `${Math.round(v.chunk_seconds)}s chunks, ${v.frames_per_chunk} frames`
+        : (status === "error" ? "indexing failed" : "not processed yet");
+      const btn = $("#reprocBtn"); btn.disabled = false; btn.textContent = "Reprocess (VLM)";
+    }
+  } catch (e) {}
+  loadVideos();
+  if (status === "error" && current && current.id === id) toast("Indexing failed");
+}
+
+$("#reprocBtn").onclick = async () => {
+  if (!current) return;
+  if (!confirm(`Re-process "${current.name}" with the VLM? This re-captions every segment and rebuilds its index.`)) return;
+  const btn = $("#reprocBtn");
+  const id = current.id;
+  const stop = { done: false };
+  btn.disabled = true; btn.innerHTML = RING_HTML;
+  const post = api(`/api/videos/${id}/index`, { method: "POST" });
+  const poll = pollProgress("index", id, btn, stop);
+  try {
+    const r = await post;
+    stop.done = true; setRing(btn, 100);
+    $("#chat").innerHTML = ""; $("#sumOut").innerHTML = "";
+    try { const vv = await api(`/api/videos/${id}`); current = vv;
+      $("#vparams").textContent = (vv.chunk_seconds && vv.frames_per_chunk) ? `${Math.round(vv.chunk_seconds)}s chunks, ${vv.frames_per_chunk} frames` : ""; } catch (e) {}
+    toast(`Reprocessed: ${r.segments} segments`);
+  } catch (e) { stop.done = true; toast("Reprocess failed: " + e.message); }
+  await poll;
+  btn.disabled = false; btn.textContent = "Reprocess (VLM)";
+};
+
+function renderAnalysis(r) {
+  const out = $("#sumOut");
+  out.innerHTML = "";
+  if (!r || !r.markdown) return;
+  const mdCard = document.createElement("div"); mdCard.className = "card md";
+  mdCard.innerHTML = mdToHtml(r.markdown);
+  out.appendChild(mdCard);
+  const chunkList = r.chunks || [];
+  if (chunkList.length) {
+    const timelineCard = document.createElement("div"); timelineCard.className = "card";
+    const h2 = document.createElement("h2"); h2.style.cssText = "margin-top:0;color:var(--accent2)";
+    h2.textContent = "Segment timeline";
+    timelineCard.appendChild(h2);
+    for (const c of chunkList) {
+      const row = document.createElement("div"); row.className = "chunk";
+      const ts = document.createElement("span"); ts.className = "ts";
+      ts.textContent = `[${c.start}-${c.end}s]`;
+      row.appendChild(ts);
+      row.appendChild(document.createTextNode(c.caption));
+      timelineCard.appendChild(row);
+    }
+    out.appendChild(timelineCard);
+  }
+}
+async function loadAnalysis(id) {
+  try { renderAnalysis(await api(`/api/videos/${id}/analysis`)); } catch (e) {}
+}
+$("#sumBtn").onclick = async () => {
+  if (!current) return;
+  const btn = $("#sumBtn");
+  const id = current.id;
+  const stop = { done: false };
+  btn.disabled = true; btn.innerHTML = RING_HTML;
+  $("#sumOut").innerHTML = "";
+  const reqBody = { prompt: $("#sumPrompt").value.trim() };
+  const post = api(`/api/videos/${id}/analyze`, { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify(reqBody) });
+  const poll = pollProgress("analyze", id, btn, stop);
+  try {
+    const r = await post;
+    stop.done = true; setRing(btn, 100);
+    renderAnalysis(r);
+  } catch(e) { stop.done = true; const errCard = document.createElement("div"); errCard.className = "card"; errCard.textContent = "Error: " + e.message; $("#sumOut").innerHTML = ""; $("#sumOut").appendChild(errCard); }
+  await poll;
+  btn.disabled = false; btn.textContent = "Analyze video";
+};
+
+// object tracking
+function viewTracked(on) {
+  if (!current) return;
+  // Swap between two preloaded video elements (no src change), so there is no reload flash.
+  const a = $("#player"), b = $("#playerTracked");
+  const cur = on ? a : b, nxt = on ? b : a;
+  try { nxt.currentTime = cur.currentTime || 0; } catch (e) {}
+  const wasPlaying = !cur.paused && !cur.ended;
+  cur.pause();
+  cur.style.display = "none";
+  nxt.style.display = "block";
+  if (wasPlaying) nxt.play().catch(() => {});
+}
+function reflectTracking() { const on = $("#trackSwitch").checked; $("#trackState").textContent = on ? "ON" : "OFF"; viewTracked(on); }
+function setTracking(on) { $("#trackSwitch").checked = on; reflectTracking(); }
+$("#trackSwitch").onchange = reflectTracking;
+
+function renderTracks(data) {
+  const out = $("#trkOut");
+  out.innerHTML = "";
+  const tracks = (data && data.tracks) || [];
+  $("#viewToggle").style.display = (data && data.has_annotated) ? "flex" : "none";
+  if (data && data.has_annotated && current) {
+    const turl = `/api/videos/${current.id}/tracked`;
+    const b = $("#playerTracked");
+    if (!b.getAttribute("src")) { b.src = turl; b.load(); }  // preload so the switch is instant
+  }
+  if (!tracks.length) { out.innerHTML = '<div class="hint" style="margin-top:12px">No tracked objects yet. Choose objects and click Track.</div>'; return; }
+  const card = document.createElement("div"); card.className = "card";
+  const h2 = document.createElement("h2"); h2.style.cssText = "margin-top:0;color:var(--accent2)";
+  h2.textContent = "Tracked objects: " + ((data.objects || []).join(", ") || "none");
+  card.appendChild(h2);
+  const citationsDiv = document.createElement("div"); citationsDiv.className = "citations";
+  for (const t of tracks) {
+    const chip = document.createElement("div"); chip.className = "cite"; chip.dataset.t = t.start;
+    const span = document.createElement("span");
+    span.textContent = `${t.label} #${t.id} \u00b7 ${Math.round(t.start)}-${Math.round(t.end)}s`;
+    chip.appendChild(span);
+    chip.onclick = () => {
+      setTracking(true);
+      const ts = parseFloat(chip.dataset.t) || 0; const p = $("#player");
+      const seek = () => { p.currentTime = ts; p.play().catch(()=>{}); };
+      if (p.readyState >= 1) seek(); else p.addEventListener("loadedmetadata", seek, { once: true });
+    };
+    citationsDiv.appendChild(chip);
+  }
+  card.appendChild(citationsDiv);
+  out.appendChild(card);
+}
+
+async function loadTracks(id) {
+  try {
+    const d = await api(`/api/videos/${id}/tracks`);
+    if (d.classes && d.classes.length) $("#trkObjects").value = d.classes.join(", ");
+    if (d.has_annotated) renderTracks(d);
+  } catch (e) {}
+}
+
+$("#trkBtn").onclick = async () => {
+  if (!current) { toast("Select a video first"); return; }
+  const btn = $("#trkBtn");
+  const id = current.id;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Tracking';
+  toast("Tracking started; this can take a little while...");
+  const classes = $("#trkObjects").value.split(",").map(s => s.trim()).filter(Boolean);
+  try {
+    const r = await api(`/api/videos/${id}/track`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ classes }) });
+    renderTracks(r);
+    setTracking(true);
+    toast(`Tracked ${(r.tracks || []).length} objects`);
+  } catch (e) { toast("Tracking failed: " + e.message); }
+  btn.disabled = false; btn.textContent = "Track";
+};
+
+// domain prompt modal
+let dpDefault = "";
+function fillPresetOptions() {
+  const sel = $("#dpPreset"); sel.innerHTML = "";
+  for (const name of Object.keys(PRESETS)) { const o = document.createElement("option"); o.value = name; o.textContent = name; sel.appendChild(o); }
+  const custom = document.createElement("option"); custom.value = "Custom"; custom.textContent = "Custom"; sel.appendChild(custom);
+}
+function matchPreset(text) {
+  for (const [name, val] of Object.entries(PRESETS)) { if (val.trim() === text.trim()) return name; }
+  return "Custom";
+}
+async function openDomainPrompt() {
+  try { const d = await api("/api/domain-prompt"); dpDefault = d.default || ""; $("#dpText").value = d.prompt || ""; $("#dpPreset").value = matchPreset(d.prompt || ""); }
+  catch(e) { $("#dpText").value = ""; }
+  try { const p = await api("/api/settings/processing"); $("#dpChunk").value = p.chunk_seconds; $("#dpFrames").value = p.frames_per_chunk; } catch(e) {}
+  $("#dpModal").classList.add("show");
+}
+$("#dpBtn").onclick = openDomainPrompt;
+$("#dpClose").onclick = () => $("#dpModal").classList.remove("show");
+$("#dpPreset").onchange = () => { const v = $("#dpPreset").value; if (v !== "Custom") $("#dpText").value = PRESETS[v]; };
+$("#dpReset").onclick = () => { $("#dpText").value = dpDefault; $("#dpPreset").value = matchPreset(dpDefault); };
+$("#dpSave").onclick = async () => {
+  try {
+    await api("/api/domain-prompt", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ prompt: $("#dpText").value.trim() }) });
+    await api("/api/settings/processing", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ chunk_seconds: parseFloat($("#dpChunk").value) || 20, frames_per_chunk: parseInt($("#dpFrames").value) || 6 }) });
+    toast("Settings saved"); $("#dpModal").classList.remove("show");
+  } catch(e) { toast("Save failed: " + e.message); }
+};
+$("#dpModal").onclick = e => { if (e.target.id === "dpModal") $("#dpModal").classList.remove("show"); };
+
+fillPresetOptions();
+loadHealth(); loadVideos();
+</script>
+</body>
+</html>

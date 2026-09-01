@@ -6,7 +6,7 @@ apiVersion: v2
 name: aimsb-agentic-rag
 description: Agentic RAG application using MCP Architecture
 type: application
-version: 0.6.3
+version: 0.6.4
 maintainers:
   - name: AMD
     url: https://www.amd.com/

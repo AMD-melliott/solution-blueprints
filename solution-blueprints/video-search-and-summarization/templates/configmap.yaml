@@ -1,0 +1,17 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aimsb-video-search-and-summarization.fullname" . }}
+  labels:
+    app: {{ include "aimsb-video-search-and-summarization.fullname" . }}
+data:
+{{- /* Package the application source (src/**) into ConfigMap keys (path "/" -> "_"). */}}
+{{- $files := .Files }}
+{{- range $path, $_ := .Files.Glob "src/**" }}
+  {{ $path | replace "/" "_" }}: |
+{{ $files.Get $path | indent 4 }}
+{{- end }}

@@ -83,7 +83,7 @@ cluster-admin privileges and without errors.
 Requirements:
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) configured and pointing at your target cluster
-- [Helm](https://helm.sh/docs/intro/install/) 3.17 or higher installed
+- [Helm](https://helm.sh/docs/intro/install/) 3.16 – 4.2.0: Installed on your local machine
 - Cluster-admin or rights to create ClusterRole, ClusterRoleBinding, and CRDs
 
 Clone the public

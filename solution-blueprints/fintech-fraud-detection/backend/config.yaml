@@ -1,0 +1,85 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+data:
+  data_dir: ./data
+  artifacts_dir: ./artifacts
+
+# Temporal train/test split — later transactions become the test set
+split:
+  sort_col: TransactionDT
+  test_fraction: 0.20
+
+graph:
+  edge_cols:        # edge keys; 'uid' is a composite built from uid_cols (not a raw column)
+    - card1
+    - uid
+  uid_cols:         # components of the composite identity key 'uid' (= card1_addr1_D1)
+    - card1
+    - addr1
+    - D1
+  max_group_size: 300
+  max_edges: 5_000_000
+  norm_clip: 10.0   # clamp z-scored features to ±this (must match training)
+  exclude_node_cols:
+    - isFraud
+    - TransactionID
+    - uid
+    - tx_day
+  freq_encode_cols:
+    - card1
+    - card2
+    - card3
+    - card5
+    - addr1
+    - addr2
+    - P_emaildomain
+    - R_emaildomain
+    - DeviceInfo
+    - id_30
+    - id_31
+  rolling_size: 5000   # in-memory buffer for "graph" inference mode
+
+model:
+  hidden_channels: 160
+  embed_dim: 64
+  head_hidden: 48
+  dropout: 0.2
+
+training:
+  seed: 42
+  val_fraction: 0.15
+  max_wall_seconds: 3600
+  epochs: 500
+  lr: 3.0e-3
+  min_lr: 1.0e-6
+  weight_decay: 1.0e-4
+  grad_clip: 1.0
+  warm_t0: 2500
+  warm_t_mult: 2
+  log_every_sec: 45.0
+
+xgb:
+  n_estimators: 1000
+  max_depth: 6
+  learning_rate: 0.05
+  subsample: 0.8
+  colsample_bytree: 0.8
+  early_stopping_rounds: 30
+  eval_metric: aucpr
+  n_jobs: -1
+  tree_method: hist
+  random_state: 42
+  use_gnn_embeddings: true  # false → train on tabular features only
+  # "auto" picks "cuda" when a GPU is available (NVIDIA CUDA or AMD ROCm via HIP), else "cpu"
+  device: auto
+
+eval:
+  threshold: 0.5
+
+viz:
+  plot_max_points: 12_000
+  output_dir: ./artifacts/plots
+  show: false
+  dpi: 120

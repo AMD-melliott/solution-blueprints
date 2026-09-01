@@ -1,0 +1,156 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+http_route:
+  enabled: false
+  gateway:
+    name: https
+    namespace: envoy-gateway-system
+
+metadata:
+  labels: {}
+
+# The app source ships via ConfigMap and runs on a stock Python image (entrypoint installs deps).
+image: "python:3.12"
+imagePullPolicy: Always
+
+# Application configuration (segmentation, retrieval, recursive summary). The domain prompt and
+# chunk/keyframe settings are also editable at runtime from the UI.
+env_vars:
+  CHUNK_SECONDS: "10"
+  FRAMES_PER_CHUNK: "8"
+  SCENE_FANIN: "5"
+  RETRIEVAL_TOP_K: "20"
+  HYBRID_TOP_N: "12"
+  FRAME_MAX_SIDE: "768"
+  REQUEST_TIMEOUT_S: "300"
+
+deployment:
+  ports:
+    http: 8090
+
+resources:
+  requests: { cpu: "2", memory: "6Gi" }
+  limits: { cpu: "8", memory: "16Gi" }
+
+storage:
+  ephemeral:
+    quantity: 50Gi
+    storageClassName: mlstorage
+  dshm:
+    sizeLimit: 8Gi
+
+startupProbe:
+  httpGet: { path: /api/health, port: http }
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  failureThreshold: 120
+livenessProbe:
+  httpGet: { path: /api/health, port: http }
+  periodSeconds: 15
+readinessProbe:
+  httpGet: { path: /api/health, port: http }
+  periodSeconds: 10
+
+# initContainer dependency readiness waits (retries x 5s). Non-fatal: the app starts even
+# if these elapse.
+dependencyWait:
+  retries: 240        # ~20 min, covers first-time model load/compile for the LLM and VLM
+  trackerRetries: 24  # ~2 min; object tracking is an on-demand feature
+
+# Optional Secret (key HF_TOKEN) for gated/faster model pulls by the VLM.
+hfTokenSecret: ""
+
+# -- Values passed to the `llm` subchart (aimchart-llm): recursive summaries + grounded answers --
+llm:
+  service:
+    enabled: true
+    type: ClusterIP
+  image: "amdenterpriseai/aim-qwen-qwen3-32b:0.11.1"
+  model: "Qwen/Qwen3-32B"   # served-model name; the app also queries /v1/models
+  apiKey: ""
+  apiKeySecretRef: {}
+  storage:
+    ephemeral:
+      storageClassName: mlstorage
+      quantity: 512Gi
+
+# -- Values passed to the `chromadb` subchart (aimchart-chromadb): hybrid-retrieval vector store --
+chromadb:
+  metadata:
+    labels: {}
+  image:
+    repository: "chromadb/chroma"
+    tag: "1.3.5"
+  resources:
+    requests: { cpu: "1", memory: "4Gi" }
+    limits: { cpu: "2", memory: "8Gi" }
+  deployment:
+    ports:
+      http: 8000
+  persistence:
+    enabled: true
+    size: 25Gi
+    storageClassName: mlstorage
+
+# -- In-chart vision-language model (captioning), ROCm vLLM. --
+# amd.com/gpu under limits requires the AMD GPU device plugin on the node.
+vlm:
+  image: "vllm/vllm-openai-rocm:v0.22.0"
+  model: "Qwen/Qwen3-VL-8B-Instruct"
+  port: 8000
+  maxModelLen: 32768
+  gpuMemoryUtilization: "0.85"
+  extraArgs: []
+  shmSize: 16Gi
+  modelCacheSize: 80Gi
+  resources:
+    requests: { cpu: "8", memory: "32Gi" }
+    limits: { cpu: "16", memory: "64Gi", amd.com/gpu: 1 }
+
+# -- Caption-text embeddings (BGE-M3), served by the aimchart-embedding subchart (vLLM,
+# OpenAI-compatible /v1/embeddings). amd.com/gpu under limits requires the AMD GPU device plugin. --
+embedText:
+  nameOverride: embed-text
+  image: "vllm/vllm-openai-rocm:v0.22.0"
+  model: "BAAI/bge-m3"
+  gpus: 1
+  existingService: null
+  deployment:
+    ports:
+      http: 7997
+    # Run vLLM in embedding (pooling) mode.
+    args: ["--runner", "pooling"]
+  resources:
+    requests: { cpu: "4", memory: "16Gi" }
+    limits: { cpu: "8", memory: "32Gi" }
+
+# -- Keyframe image (and text-query) embeddings (CLIP), via the aimchart-embedding subchart.
+# CLIP embeds images (chat-style request) and short text queries into a shared space. --
+embedImage:
+  nameOverride: embed-image
+  image: "vllm/vllm-openai-rocm:v0.22.0"
+  model: "openai/clip-vit-base-patch32"
+  gpus: 1
+  existingService: null
+  deployment:
+    ports:
+      http: 7997
+    args: ["--runner", "pooling"]
+  resources:
+    requests: { cpu: "4", memory: "16Gi" }
+    limits: { cpu: "8", memory: "32Gi" }
+
+# -- In-chart object detection + tracking (YOLO11 + ByteTrack), GPU. Image built and published
+# by CI from components/track via docker/build.yaml; the tag tracks the chart version. --
+track:
+  image:
+    repository: "registry-1.docker.io/amdenterpriseai/image-aimsb-video-search-and-summarization-track"
+    tag: "{{ .Chart.Version }}"
+  model: "yolo11l.pt"
+  port: 8102
+  shmSize: 8Gi
+  resources:
+    requests: { cpu: "4", memory: "16Gi" }
+    limits: { cpu: "8", memory: "32Gi", amd.com/gpu: 1 }

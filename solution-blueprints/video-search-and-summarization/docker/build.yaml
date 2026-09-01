@@ -1,0 +1,14 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+# Build configuration consumed by the CI image pipeline
+# (utils/build-and-push-chart-custom-images.sh). REGISTRY, ORG, and TAG are injected by CI;
+# TAG is the chart version, matching the {{ .Chart.Version }} tag referenced in values.yaml.
+# Embedding services use the shared aimchart-embedding subchart (vLLM), so only the tracker
+# needs a custom image.
+services:
+  track:
+    build:
+      context: ../components/track
+    image: "${REGISTRY:?Must set REGISTRY}/${ORG:?Must set ORG}/image-aimsb-video-search-and-summarization-track:${TAG:?Must set TAG}"

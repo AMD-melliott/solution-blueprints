@@ -18,8 +18,6 @@ This blueprint supports **AMD Instinct** (default) and **AMD Radeon** platforms.
 
 The chart ships defaults for two platforms, selected with `--set global.platform=<platform>`: `instinct` (GPU, the default) and `radeon` (GPU). Each selects a matching AIM image and resource profile for the LLM; inspect them with `helm show values . --jsonpath '{.llm.platformDefaults}'`.
 
-> **Helm note**: Built and tested on Helm 3.17 or higher. On Helm v4, if the piped `kubectl apply` is rejected, run `helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-pdf-to-podcast --untar` first and template the local `./aimsb-pdf-to-podcast` directory instead.
-
 Both the LLM and TTS services are deployed automatically via subchart dependencies (`aimchart-llm` and `aimchart-qwen-tts`). The environment variables `APP_LLM_URL` and `APP_TTS_BASE_URL` are auto-configured from the subchart service URLs.
 
 ### AMD Instinct (GPU, default)
@@ -32,6 +30,15 @@ namespace="my-namespace"
 helm template $name oci://registry-1.docker.io/amdenterpriseai/aimsb-pdf-to-podcast \
   | kubectl apply -f - -n $namespace
 ```
+
+> **Known issue (Helm 4.2.1+):** Helm 4.2.1 and newer leak `Pulled:`/`Digest:` metadata to stdout ([helm#32215](https://github.com/helm/helm/issues/32215)), which breaks the piped `helm template … | kubectl apply -f -`. Until the fix ships, either use Helm **3.16 – 4.2.0**, or split the pull and template steps, e.g.:
+>
+> ```bash
+> helm pull oci://registry-1.docker.io/amdenterpriseai/aimsb-pdf-to-podcast --untar
+> helm template $name ./aimsb-pdf-to-podcast \
+>   # …same flags as the piped command above…
+>   | kubectl apply -f - -n $namespace
+> ```
 
 ### AMD Radeon (GPU)
 

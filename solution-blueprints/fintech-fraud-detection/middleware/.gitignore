@@ -1,0 +1,9 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+.venv/
+__pycache__/
+*.pyc
+.env
+data/*.parquet

@@ -1,0 +1,62 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fintech.complexName" . }}-backend
+  labels:
+    {{- include "fintech.labels" . | nindent 4 }}
+    app: {{ include "fintech.complexName" . }}-backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "fintech.complexName" . }}-backend
+  template:
+    metadata:
+      labels:
+        app: {{ include "fintech.complexName" . }}-backend
+    spec:
+      {{- include "fintech.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: backend
+          image: "{{ .Values.images.backend.repository }}:{{ tpl .Values.images.backend.tag . }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ports.backend }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: {{ .Values.ports.backend | quote }}
+            - name: GNN_MODEL_URL
+              value: {{ .Values.env_vars.backend.GNN_MODEL_URL | default (include "fintech.gnnUrl" .) | quote }}
+            - name: XGB_MODEL_URL
+              value: {{ .Values.env_vars.backend.XGB_MODEL_URL | default (include "fintech.xgbUrl" .) | quote }}
+            {{- range $key, $value := .Values.env_vars.backend }}
+            {{- if and (ne $key "GNN_MODEL_URL") (ne $key "XGB_MODEL_URL") }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources.backend | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.ports.backend }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.ports.backend }}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6

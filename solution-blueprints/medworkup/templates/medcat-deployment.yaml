@@ -1,0 +1,114 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+{{- if .Values.medcat.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "medworkup.fullname" . }}-medcat
+  labels:
+    {{- include "medworkup.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "medworkup.fullname" . }}-medcat
+  template:
+    metadata:
+      labels:
+        app: {{ include "medworkup.fullname" . }}-medcat
+    spec:
+      {{- include "medworkup.imagePullSecrets" . | nindent 6 }}
+      initContainers:
+        - name: download-medcat-model
+          image: alpine:3.20
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - apk add --no-cache curl --quiet && /bin/sh /scripts/download.sh
+          env:
+            - name: UMLS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.medcatCredentialsSecret }}
+                  key: UMLS_API_KEY
+            - name: MEDCAT_FIRST_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.medcatCredentialsSecret }}
+                  key: MEDCAT_FIRST_NAME
+            - name: MEDCAT_LAST_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.medcatCredentialsSecret }}
+                  key: MEDCAT_LAST_NAME
+            - name: MEDCAT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.medcatCredentialsSecret }}
+                  key: MEDCAT_EMAIL
+            - name: MEDCAT_AFFILIATION
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.medcatCredentialsSecret }}
+                  key: MEDCAT_AFFILIATION
+            - name: MEDCAT_USE_CASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.medcatCredentialsSecret }}
+                  key: MEDCAT_USE_CASE
+            - name: MEDCAT_FUNDER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.medcatCredentialsSecret }}
+                  key: MEDCAT_FUNDER
+                  optional: true
+            - name: MEDCAT_MODEL
+              value: {{ .Values.medcat.model | quote }}
+          volumeMounts:
+            - name: model-artifacts
+              mountPath: /cat/models
+            - name: init-scripts
+              mountPath: /scripts
+      containers:
+        - name: medcat
+          image: {{ .Values.images.medcat.repository }}:{{ .Values.images.medcat.tag }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.ports.medcat }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "medworkup.fullname" . }}-config
+          resources:
+            {{- toYaml .Values.medcat.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /api/health/live
+              port: {{ .Values.ports.medcat }}
+            initialDelaySeconds: 150
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health/live
+              port: {{ .Values.ports.medcat }}
+            initialDelaySeconds: 150
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 5
+          volumeMounts:
+            - name: model-artifacts
+              mountPath: /cat/models
+              readOnly: true
+      volumes:
+        - name: model-artifacts
+          persistentVolumeClaim:
+            claimName: {{ include "medworkup.fullname" . }}-model-artifacts
+        - name: init-scripts
+          configMap:
+            name: {{ include "medworkup.fullname" . }}-medcat-init
+            defaultMode: 0755
+{{- end }}

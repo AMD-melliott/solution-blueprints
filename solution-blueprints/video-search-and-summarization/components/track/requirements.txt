@@ -1,0 +1,11 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+fastapi==0.124.0
+opencv-python-headless==5.0.0.93
+python-multipart==0.0.20
+# torch, torchvision and ROCm are provided by the vllm/vllm-openai-rocm base image
+# and must not be reinstalled here (that would break the ROCm-matched builds).
+ultralytics==8.4.121
+uvicorn[standard]==0.38.0

@@ -1,0 +1,19 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: v2
+name: aimsb-fintech-fraud-detection
+description: A Helm chart for deploying FinTech Fraud Detection on Kubernetes
+type: application
+version: 0.1.0
+maintainers:
+  - name: AMD
+    url: https://www.amd.com/
+annotations:
+  org.opencontainers.image.vendor: AMD
+  com.amd.aim.release.notes: "FinTech Fraud Detection service v0.1.0"
+  com.amd.aim.description.short: "Real-time financial transaction fraud detection using a GraphSAGE GNN and XGBoost ensemble with a configurable rules engine, served as ONNX artifacts on AMD GPUs with a live streaming frontend."
+  com.amd.aim.description.full: "Real-time financial transaction fraud detection system deployed on AMD GPUs in Kubernetes. Each transaction is scored through a three-stage pipeline: a configurable rules engine applies deterministic fraud rules, a three-layer GraphSAGE Graph Neural Network extracts relational features from a transaction graph built on shared card and identity keys, and an XGBoost classifier combines tabular features with GNN embeddings to produce a final fraud probability. Both ML models are exported as ONNX artifacts and served via BentoML with ROCm GPU acceleration. A FastAPI backend orchestrates scoring and a React streaming frontend replays the IEEE-CIS dataset at configurable speed, displaying live fraud decisions, rule matches, escalations, and financial impact metrics."
+  com.amd.aim.hfToken.required: "true"
+  com.amd.aim.title: "FinTech Fraud Detection"

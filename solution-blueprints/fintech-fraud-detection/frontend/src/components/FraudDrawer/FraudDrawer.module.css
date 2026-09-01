@@ -1,0 +1,247 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 40;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 92vw);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.2s ease-out;
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+.close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 6px;
+}
+.close:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 32px;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  margin: 0 0 12px;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+}
+.rowLabel {
+  font-size: 13px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.rowValue {
+  font-size: 13px;
+  color: var(--text);
+  text-align: right;
+}
+.rowValueDim {
+  color: var(--text-dim);
+}
+
+/* Model score card — red outline */
+.scoreCard {
+  border: 1px solid;
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.scoreCardClean {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.05);
+}
+.scoreCardReview {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.05);
+}
+.scoreCardFraud {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.05);
+}
+.scoreCardClean .scoreVal {
+  color: var(--green);
+}
+.scoreCardReview .scoreVal {
+  color: var(--amber);
+}
+.scoreCardFraud .scoreVal {
+  color: var(--red);
+}
+.scoreLabel {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.scoreRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.scoreVal {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--red);
+  line-height: 1;
+}
+.scoreThreshold {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.pill {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+  border: 1px solid;
+}
+.pillClean {
+  background: var(--green-dim);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: var(--green);
+}
+.pillReview {
+  background: var(--amber-dim);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--amber);
+}
+.pillFraud {
+  background: var(--red-dim);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--red);
+}
+
+/* Explainability sub-cards */
+.subCard {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.subTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.ruleItem {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ruleItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.ruleItem:first-child {
+  padding-top: 0;
+}
+
+.ruleHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ruleId {
+  font-family: "Inter", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.ruleAction {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+.ruleDesc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.riskPill {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid;
+}
+.riskHIGH {
+  background: var(--red-dim);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--red);
+}
+.riskMEDIUM {
+  background: var(--amber-dim);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--amber);
+}
+.riskLOW {
+  background: var(--blue-dim);
+  border-color: rgba(59, 158, 255, 0.3);
+  color: var(--blue);
+}

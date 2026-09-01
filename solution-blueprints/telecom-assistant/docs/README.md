@@ -95,7 +95,7 @@ Requirements:
 - Persistent storage available for ChromaDB and Redis.
 - LLM, VLM, ASR, TTS, and Embedding model endpoints (self-hosted or external).
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) configured and pointing at your target cluster.
-- [Helm](https://helm.sh/docs/intro/install/) 3.17 or higher installed.
+- [Helm](https://helm.sh/docs/intro/install/) 3.16 – 4.2.0: Installed on your local machine
 
 Before deploying the Telecom Assistant blueprint, you must install the **STUNner Operator** — a Kubernetes-native WebRTC media gateway used for routing browser media traffic to LiveKit.
 

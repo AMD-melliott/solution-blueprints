@@ -1,0 +1,36 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+FROM rocm/dev-ubuntu-24.04:7.1.1-complete
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-pip python-is-python3 gcc g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# PyTorch from ROCm wheel (needed to load .pt bundles and detect GPU)
+RUN pip install --no-cache-dir --break-system-packages torch \
+    --index-url https://download.pytorch.org/whl/rocm7.1
+
+# Install training deps first (includes CPU xgboost), then override with AMD ROCm build. \
+COPY requirements-xgb-train.txt ./
+RUN pip install --no-cache-dir --break-system-packages -r requirements-xgb-train.txt
+
+# AMD-specific XGBoost first so onnxmltools sees the final XGBoost package
+RUN pip install --no-cache-dir --break-system-packages amd_xgboost \
+    --extra-index-url=https://pypi.amd.com/rocm-7.1.1/simple
+
+COPY config.yaml service_xgb.sh ./
+COPY pipeline/ ./pipeline/
+RUN chmod +x service_xgb.sh
+
+# /app/artifacts — bind-mount shared storage; must already contain model.pt from GNN training
+VOLUME ["/app/artifacts"]
+
+ENV CONFIG=config.yaml \
+    LOG_DIR=/app/logs \
+    SKIP_VIZ=1
+
+CMD ["bash", "service_xgb.sh"]

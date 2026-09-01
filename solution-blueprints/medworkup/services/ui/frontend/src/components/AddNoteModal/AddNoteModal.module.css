@@ -1,0 +1,159 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--col-radius);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.head {
+  padding: 20px 24px 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+.subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+.close {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  line-height: 1;
+  padding: 2px;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+}
+.close:hover {
+  color: var(--text);
+}
+
+.body {
+  padding: 0 24px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--btn-radius);
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input::placeholder,
+.textarea::placeholder {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+.input:focus,
+.textarea:focus {
+  border-color: var(--blue-action);
+}
+.textarea {
+  min-height: 150px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.helper {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.footer {
+  padding: 16px 24px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn {
+  height: var(--btn-h);
+  padding: 0 18px;
+  border-radius: var(--btn-radius);
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+}
+.btnSecondary {
+  background: transparent;
+  border: 1px solid var(--border-b);
+  color: var(--text);
+}
+.btnSecondary:hover {
+  border-color: var(--blue-action);
+}
+.btnPrimary {
+  background: var(--blue-action);
+  border: 1px solid var(--blue-action);
+  color: #fff;
+}
+.btnPrimary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.btnPrimary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

@@ -54,7 +54,7 @@ spec:
             - |
               pip install --no-cache-dir -r /app/requirements.txt && \
               cd /app && \
-              uvicorn rag_app:app --host 0.0.0.0 --port {{ .Values.agentApp.service.port }}
+              uvicorn rag_app:app --host 0.0.0.0 --port {{ .Values.agentApp.service.port }} --proxy-headers
           env:
             - name: MCP_URL
               value: {{ include "mcp-server.url" . | quote }}

@@ -1,0 +1,128 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+http_route:
+  enabled: false
+  gateway:
+    name: https
+    namespace: envoy-gateway-system
+
+replicaCount: 1
+imagePullPolicy: Always
+imagePullSecrets: []
+
+# ---------------------------------------------------------------------------
+# Images — tag supports tpl (e.g. "{{ .Chart.Version }}")
+# ---------------------------------------------------------------------------
+images:
+  backend:
+    repository: "registry-1.docker.io/amdenterpriseai/image-aimsb-fintech-fraud-detection-backend"
+    tag: "{{ .Chart.Version }}"
+  middleware:
+    repository: "registry-1.docker.io/amdenterpriseai/image-aimsb-fintech-fraud-detection-middleware"
+    tag: "{{ .Chart.Version }}"
+  gnn:
+    repository: "registry-1.docker.io/amdenterpriseai/image-aimsb-fintech-fraud-detection-gnn"
+    tag: "{{ .Chart.Version }}"
+  xgb:
+    repository: "registry-1.docker.io/amdenterpriseai/image-aimsb-fintech-fraud-detection-xgb"
+    tag: "{{ .Chart.Version }}"
+
+# ---------------------------------------------------------------------------
+# Service ports
+# ---------------------------------------------------------------------------
+ports:
+  backend: 8000     # orchestrator — POST /score, GET /health
+  middleware: 8080  # FastAPI SSE  — /stream/*, /health
+  gnn: 3000         # BentoML GNN  — POST /models/fraud-gnn/infer
+  xgb: 3001         # BentoML XGB  — POST /models/fraud-xgb/infer
+
+# ---------------------------------------------------------------------------
+# Middleware tunables
+# ---------------------------------------------------------------------------
+middleware:
+  streamIntervalMs: "750"
+  demoCsvPath: "data/test_transaction.csv"
+  identityCsvPath: "data/test_identity.csv"
+  maxDemoRows: "20000"
+
+# ---------------------------------------------------------------------------
+# Environment variables per service.
+# Injected as-is into the respective deployment.
+#
+# Backend vars set at deploy time via --set, e.g.:
+#   --set env_vars.backend.MODEL1_URL="http://..."
+#   --set env_vars.backend.MODEL1_TOKEN="dummy"
+# ---------------------------------------------------------------------------
+env_vars:
+  backend:
+    # GNN_MODEL_URL and XGB_MODEL_URL are wired automatically via helpers in the deployment template
+    GNN_MODEL_NAME: "fraud-gnn"
+    GNN_API_TOKEN: ""
+    XGB_MODEL_NAME: "fraud-xgb"
+    XGB_API_TOKEN: ""
+  middleware: {}
+  gnn: {}
+  xgb: {}
+
+# ---------------------------------------------------------------------------
+# HuggingFace secret — create with:
+#   kubectl create secret generic hf-token --from-literal=hf-token=hf_xxxx
+# ---------------------------------------------------------------------------
+hfSecret:
+  name: hf-token
+  key: hf-token
+
+# ---------------------------------------------------------------------------
+# Model artifact downloads from HuggingFace
+# initImage: used to run huggingface-cli; artifacts are skipped if already present
+# ---------------------------------------------------------------------------
+artifacts:
+  initImage: "python:3.11-slim"
+  gnn:
+    hfRepo: "dklestov-cloud/gnn-fraud"
+    storageSize: "4Gi"
+  xgb:
+    hfRepo: "dklestov-cloud/gnn-fraud"
+    storageSize: "4Gi"
+  transactions:
+    hfRepo: "dklestov-cloud/gnn-fraud-transactions"
+    storageSize: "1Gi"
+
+# ---------------------------------------------------------------------------
+# Resource requests / limits
+# ---------------------------------------------------------------------------
+resources:
+  backend:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  middleware:
+    requests:
+      cpu: "200m"
+      memory: "2Gi"
+    limits:
+      cpu: "500m"
+      memory: "2Gi"
+  gnn:
+    requests:
+      cpu: "2"
+      memory: "4Gi"
+      amd.com/gpu: "1"
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+      amd.com/gpu: "1"
+  xgb:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+      amd.com/gpu: "1"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+      amd.com/gpu: "1"

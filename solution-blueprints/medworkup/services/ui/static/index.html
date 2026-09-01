@@ -1,0 +1,1015 @@
+<!--
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+-->
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedWorkUp — Clinical Diagnostic Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== LIGHT ===== */
+:root, [data-theme="light"] {
+    --bg:          #F1F5F9;
+    --surface:     #FFFFFF;
+    --surface2:    #F8FAFC;
+    --border:      #E2E8F0;
+    --border-b:    #CBD5E1;
+    --text:        #0F172A;
+    --text-dim:    #64748B;
+    --text-xs:     #94A3B8;
+    --blue:        #2563EB;
+    --blue-dim:    rgba(37,99,235,.08);
+    --blue-mid:    rgba(37,99,235,.15);
+    --green:       #16A34A;
+    --green-dim:   rgba(22,163,74,.09);
+    --red:         #DC2626;
+    --red-dim:     rgba(220,38,38,.08);
+    --amber:       #D97706;
+    --amber-dim:   rgba(217,119,6,.09);
+    --purple:      #7C3AED;
+    --purple-dim:  rgba(124,58,237,.08);
+    --cyan:        #0891B2;
+    --cyan-dim:    rgba(8,145,178,.09);
+    --hl-hover:    rgba(251,191,36,.35);
+    --hl-active:   rgba(251,191,36,.55);
+    --shadow-sm:   0 1px 3px rgba(0,0,0,.08);
+    --shadow:      0 2px 8px rgba(0,0,0,.10);
+}
+/* ===== DARK ===== */
+[data-theme="dark"] {
+    --bg:          #0A0E17;
+    --surface:     #111827;
+    --surface2:    #1A2235;
+    --border:      #1E2D42;
+    --border-b:    #2A3F5A;
+    --text:        #E2EAF4;
+    --text-dim:    #6B83A0;
+    --text-xs:     #4A6080;
+    --blue:        #3B82F6;
+    --blue-dim:    rgba(59,130,246,.10);
+    --blue-mid:    rgba(59,130,246,.18);
+    --green:       #22C55E;
+    --green-dim:   rgba(34,197,94,.10);
+    --red:         #EF4444;
+    --red-dim:     rgba(239,68,68,.10);
+    --amber:       #F59E0B;
+    --amber-dim:   rgba(245,158,11,.10);
+    --purple:      #A78BFA;
+    --purple-dim:  rgba(167,139,250,.10);
+    --cyan:        #22D3EE;
+    --cyan-dim:    rgba(34,211,238,.10);
+    --hl-hover:    rgba(251,191,36,.22);
+    --hl-active:   rgba(251,191,36,.38);
+    --shadow-sm:   0 1px 3px rgba(0,0,0,.3);
+    --shadow:      0 2px 8px rgba(0,0,0,.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; overflow: hidden; transition: background .25s, color .25s; }
+
+/* ── HEADER ──────────────────────────────────────────────────────────────── */
+.hdr {
+    height: 48px; display: flex; align-items: center; gap: 14px; padding: 0 16px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-sm); position: relative; z-index: 20;
+    transition: background .25s, border-color .25s;
+}
+.hdr-logo { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -.3px; flex-shrink: 0; }
+.hdr-logo em { color: var(--blue); font-style: normal; }
+.hdr-sep { width: 1px; height: 20px; background: var(--border-b); flex-shrink: 0; }
+.hdr-sub { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; flex-shrink: 0; }
+
+/* system health strip */
+.sys-health {
+    display: flex; align-items: center; gap: 6px; margin-left: 8px;
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--surface2);
+    font-size: 10px; color: var(--text-dim);
+}
+.svc-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--border-b);
+    transition: background .3s; cursor: default;
+}
+.svc-dot.up      { background: var(--green); }
+.svc-dot.down    { background: var(--red); }
+.svc-dot.unknown { background: var(--amber); animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.svc-label { font-size: 9px; text-transform: uppercase; letter-spacing: .8px; }
+
+.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.theme-btn {
+    width: 32px; height: 32px; border-radius: 6px;
+    border: 1px solid var(--border-b); background: var(--surface2);
+    color: var(--text-dim); cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+}
+.theme-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ── LAYOUT ──────────────────────────────────────────────────────────────── */
+.layout {
+    display: grid;
+    grid-template-columns: 240px 1fr 1fr;
+    height: calc(100vh - 48px);
+    background: var(--border);
+    gap: 1px;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────────────────────── */
+.sidebar { background: var(--surface); display: flex; flex-direction: column; overflow: hidden; transition: background .25s; }
+.sidebar-head { padding: 12px 14px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.sidebar-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); }
+.add-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-b); background: transparent; color: var(--blue); cursor: pointer; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.add-btn:hover { background: var(--blue-dim); border-color: var(--blue); }
+.soap-list { flex: 1; overflow-y: auto; }
+.soap-list::-webkit-scrollbar { width: 3px; }
+.soap-list::-webkit-scrollbar-thumb { background: var(--border-b); border-radius: 2px; }
+.soap-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background .12s; border-left: 3px solid transparent; }
+.soap-item:hover { background: var(--surface2); }
+.soap-item.active { background: var(--blue-dim); border-left-color: var(--blue); }
+.soap-item-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.soap-item-meta  { font-size: 10px; color: var(--text-dim); margin-bottom: 5px; }
+.soap-status { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 10px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.soap-status.ready    { background: var(--blue-dim);  color: var(--blue); }
+.soap-status.analyzed { background: var(--green-dim); color: var(--green); }
+.soap-status .dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+
+/* ── LEFT PANEL ──────────────────────────────────────────────────────────── */
+.panel { background: var(--surface); display: flex; flex-direction: column; overflow: hidden; transition: background .25s; }
+.panel-head { padding: 8px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; min-height: 40px; }
+.panel-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); }
+
+.analyze-bar { padding: 7px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; background: var(--surface2); }
+.analyze-btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid var(--blue); background: var(--blue); color: #fff; cursor: pointer; transition: all .15s; flex-shrink: 0; }
+.analyze-btn:hover:not(:disabled) { opacity: .88; }
+.analyze-btn:disabled { opacity: .5; cursor: not-allowed; }
+.spinner-sm { width: 10px; height: 10px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; display: none; }
+.analyze-btn.loading .spinner-sm { display: block; }
+.analyze-btn.loading .btn-label { opacity: .8; }
+.timing-badge { font-size: 10px; color: var(--text-xs); font-family: 'JetBrains Mono', monospace; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; }
+.api-url-label { font-size: 9px; color: var(--text-xs); font-family: 'JetBrains Mono', monospace; margin-left: auto; }
+
+.sufficiency-bar { padding: 6px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; font-size: 11px; }
+.sufficiency-bar.ready    { background: var(--blue-dim); }
+.sufficiency-bar.analyzed { background: var(--green-dim); }
+.suf-icon { font-size: 13px; }
+.suf-text { flex: 1; color: var(--text); }
+.suf-text strong { font-weight: 600; }
+.pipe-summary { display: flex; gap: 5px; margin-left: auto; flex-shrink: 0; }
+.pipe-summary-badge { font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 3px; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); }
+
+.soap-raw { flex: 1; overflow-y: auto; padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.75; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.soap-raw::-webkit-scrollbar { width: 4px; }
+.soap-raw::-webkit-scrollbar-thumb { background: var(--border-b); border-radius: 2px; }
+
+.hl-span { border-radius: 2px; transition: background .15s; cursor: default; }
+.hl-span.hover  { background: var(--hl-hover) !important; }
+.hl-span.active { background: var(--hl-active) !important; }
+.hl-symptom  { background: rgba(220,38,38,.11); }
+.hl-disease  { background: rgba(124,58,237,.10); }
+.hl-finding  { background: rgba(8,145,178,.10); }
+.hl-other    { background: rgba(217,119,6,.10); }
+
+/* ── RIGHT PANEL ─────────────────────────────────────────────────────────── */
+.right-col { background: var(--surface); display: flex; flex-direction: column; overflow: hidden; transition: background .25s; }
+#right-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+.pipeline-out { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.pipeline-out::-webkit-scrollbar { width: 4px; }
+.pipeline-out::-webkit-scrollbar-thumb { background: var(--border-b); border-radius: 2px; }
+
+/* pipe sections */
+.pipe-section { border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.pipe-section-head { padding: 8px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; background: var(--surface2); user-select: none; transition: background .12s; }
+.pipe-section-head:hover { background: var(--blue-dim); }
+.pipe-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pipe-dot.blue   { background: var(--blue); }
+.pipe-dot.green  { background: var(--green); }
+.pipe-dot.amber  { background: var(--amber); }
+.pipe-dot.red    { background: var(--red); }
+.pipe-dot.purple { background: var(--purple); }
+.pipe-section-title { font-size: 11px; font-weight: 600; color: var(--text); flex: 1; }
+.pipe-count { font-size: 10px; color: var(--text-xs); }
+.pipe-arrow { font-size: 10px; color: var(--text-xs); transition: transform .2s; }
+.pipe-arrow.open { transform: rotate(90deg); }
+.pipe-section-body { display: none; padding: 10px 14px 12px; }
+.pipe-section-body.open { display: block; }
+
+/* diagnosis cards */
+.diag-card { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); margin-bottom: 8px; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.diag-card:last-child { margin-bottom: 0; }
+.diag-card:hover { border-color: var(--border-b); box-shadow: var(--shadow-sm); }
+.diag-card-head { padding: 10px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+.diag-rank { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; background: var(--blue-dim); color: var(--blue); }
+.diag-rank.top { background: var(--red-dim); color: var(--red); }
+.diag-name { font-size: 12px; font-weight: 600; color: var(--text); flex: 1; }
+.conf-badge { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.conf-high { background: var(--green); }
+.conf-mid  { background: var(--amber); }
+.conf-low  { background: var(--red); }
+.conf-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin: 0 12px; overflow: hidden; }
+.conf-bar-fill { height: 100%; border-radius: 2px; transition: width .5s ease; }
+.conf-fill-high { background: var(--green); }
+.conf-fill-mid  { background: var(--amber); }
+.conf-fill-low  { background: var(--red); }
+.diag-body { padding: 8px 12px 10px; }
+.diag-reasoning { font-size: 11px; color: var(--text-dim); line-height: 1.55; margin-bottom: 8px; }
+.diag-consistency { font-size: 10px; color: var(--amber); background: var(--amber-dim); border-radius: 4px; padding: 4px 8px; margin-bottom: 8px; display: flex; gap: 5px; align-items: flex-start; }
+.diag-evidence-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-xs); margin-bottom: 5px; }
+.evidence-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.evidence-chip { font-size: 10px; padding: 2px 8px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); line-height: 1.4; }
+
+/* categorized */
+.cat-groups { display: flex; flex-direction: column; gap: 8px; }
+.cat-group-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-xs); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.cat-group-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.cat-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.cat-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; border: 1px solid transparent; }
+.cat-chip.c-symptom   { background: rgba(239,68,68,.1);   color: #DC2626; border-color: rgba(239,68,68,.25); }
+.cat-chip.c-disease   { background: rgba(124,58,237,.1);  color: #7C3AED; border-color: rgba(124,58,237,.25); }
+.cat-chip.c-finding   { background: rgba(8,145,178,.1);   color: #0891B2; border-color: rgba(8,145,178,.25); }
+.cat-chip.c-procedure { background: rgba(22,163,74,.1);   color: #16A34A; border-color: rgba(22,163,74,.25); }
+.cat-chip.c-other     { background: rgba(100,116,139,.1); color: #64748B; border-color: rgba(100,116,139,.25); }
+[data-theme="dark"] .cat-chip.c-symptom   { color: #F87171; }
+[data-theme="dark"] .cat-chip.c-disease   { color: #A78BFA; }
+[data-theme="dark"] .cat-chip.c-finding   { color: #22D3EE; }
+[data-theme="dark"] .cat-chip.c-procedure { color: #4ADE80; }
+
+/* normalized clusters */
+.cluster-grid { display: flex; flex-direction: column; gap: 6px; }
+.cluster-card { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; background: var(--surface2); }
+.cluster-canonical { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.cluster-label-badge { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 1px 5px; border-radius: 3px; background: var(--blue-dim); color: var(--blue); }
+.cluster-meta { font-size: 10px; color: var(--text-xs); display: flex; gap: 8px; }
+.cluster-variants { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px; }
+.variant-chip { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); }
+.negated-flag { font-size: 8px; font-weight: 700; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; background: var(--red-dim); color: var(--red); }
+
+/* raw entities table */
+.raw-ent-table { width: 100%; border-collapse: collapse; }
+.raw-ent-table th { position: sticky; top: 0; z-index: 2; padding: 5px 10px; text-align: left; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); background: var(--surface2); border-bottom: 1px solid var(--border); }
+.raw-ent-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.raw-ent-table tr:hover td { background: var(--surface2); }
+.raw-ent-table tr:last-child td { border-bottom: none; }
+.ent-text-cell { font-size: 11px; color: var(--text); font-weight: 500; }
+.ent-label-badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; background: var(--blue-dim); color: var(--blue); }
+.ent-source-badge { font-size: 9px; font-family: 'JetBrains Mono', monospace; padding: 1px 5px; border-radius: 3px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-xs); }
+.ent-negated { text-decoration: line-through; opacity: .5; }
+.ent-offset { font-size: 9px; font-family: 'JetBrains Mono', monospace; color: var(--text-xs); }
+
+/* json debug */
+.json-debug-head { padding: 8px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); background: var(--surface2); user-select: none; flex-shrink: 0; }
+.json-debug-head:hover { background: var(--blue-dim); }
+.json-toggle-label { font-size: 11px; font-weight: 600; color: var(--text-dim); flex: 1; }
+.json-debug-body { display: none; max-height: 320px; overflow-y: auto; background: var(--surface2); border-top: 1px solid var(--border); }
+.json-debug-body.open { display: block; }
+.json-debug-body::-webkit-scrollbar { width: 4px; }
+.json-debug-body::-webkit-scrollbar-thumb { background: var(--border-b); border-radius: 2px; }
+.json-pre { padding: 12px 14px; margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; line-height: 1.6; color: var(--text-dim); white-space: pre; overflow-x: auto; }
+.json-copy-btn { padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 500; border: 1px solid var(--border-b); background: transparent; color: var(--text-dim); cursor: pointer; transition: all .15s; }
+.json-copy-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* loading */
+.loading-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 12px; color: var(--text-dim); }
+.loading-stages { display: flex; flex-direction: column; gap: 4px; width: 210px; }
+.loading-stage { font-size: 10px; color: var(--text-xs); padding: 3px 8px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; transition: all .3s; }
+.loading-stage.active { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+.loading-stage.done   { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+.stage-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* error */
+.error-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; }
+.error-icon { font-size: 32px; }
+.error-title { font-size: 13px; font-weight: 600; color: var(--red); }
+.error-detail { font-size: 11px; color: var(--text-dim); text-align: center; max-width: 320px; line-height: 1.5; font-family: 'JetBrains Mono', monospace; background: var(--red-dim); border: 1px solid rgba(220,38,38,.2); border-radius: 6px; padding: 8px 12px; }
+.retry-btn { padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid var(--blue); background: var(--blue-dim); color: var(--blue); cursor: pointer; transition: all .15s; }
+.retry-btn:hover { background: var(--blue); color: #fff; }
+
+/* empty */
+.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-dim); }
+.empty-icon { font-size: 32px; }
+.empty-text { font-size: 12px; }
+
+/* disclaimer */
+.disclaimer { padding: 8px 14px; border-top: 1px solid var(--border); background: var(--amber-dim); display: flex; align-items: flex-start; gap: 6px; font-size: 10px; color: var(--amber); flex-shrink: 0; line-height: 1.4; }
+.disclaimer-icon { font-size: 12px; flex-shrink: 0; margin-top: 1px; }
+
+/* misc */
+.empty-cat { font-size: 11px; color: var(--text-xs); font-style: italic; }
+
+/* modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 100; display: none; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { width: 560px; background: var(--surface); border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.2); overflow: hidden; transition: background .25s; }
+.modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-title-text { font-size: 14px; font-weight: 600; color: var(--text); }
+.modal-close { background: transparent; border: none; color: var(--text-dim); cursor: pointer; font-size: 18px; }
+.modal-body { padding: 20px; }
+.modal-label { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.modal-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-b); border-radius: 6px; background: var(--surface2); color: var(--text); font-family: 'Inter', sans-serif; font-size: 12px; margin-bottom: 12px; outline: none; transition: border-color .2s; }
+.modal-input:focus { border-color: var(--blue); }
+.modal-textarea { width: 100%; height: 160px; padding: 10px; border: 1px solid var(--border-b); border-radius: 6px; background: var(--surface2); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; resize: vertical; outline: none; transition: border-color .2s; }
+.modal-textarea:focus { border-color: var(--blue); }
+.modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+.btn { padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.btn-ghost { border: 1px solid var(--border-b); background: transparent; color: var(--text-dim); }
+.btn-ghost:hover { background: var(--surface2); }
+.btn-primary { border: 1px solid var(--blue); background: var(--blue); color: #fff; }
+.btn-primary:hover { opacity: .88; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+    <div class="hdr-logo">MED<em>WORKUP</em></div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-sub">Clinical Diagnostic Assistant</div>
+    <!-- System health indicators — populated by JS on load -->
+    <div class="sys-health" id="sys-health" title="Service status">
+        <span class="svc-dot unknown" id="dot-ner"       title="NER Service"></span>
+        <span class="svc-label">NER</span>
+        <span class="svc-dot unknown" id="dot-embed"     title="Embedding Service"></span>
+        <span class="svc-label">Embed</span>
+        <span class="svc-dot unknown" id="dot-llm"       title="LLM / MedGemma"></span>
+        <span class="svc-label">LLM</span>
+        <span class="svc-dot unknown" id="dot-orchestrator" title="Orchestrator"></span>
+        <span class="svc-label">Pipeline</span>
+    </div>
+    <div class="hdr-right">
+        <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☾</button>
+    </div>
+</div>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-head">
+            <span class="sidebar-title">SOAP Notes</span>
+            <button class="add-btn" onclick="openModal()" title="Add new SOAP">+</button>
+        </div>
+        <div class="soap-list" id="soap-list"></div>
+    </div>
+
+    <!-- LEFT PANEL -->
+    <div class="panel" id="left-panel">
+        <div class="panel-head">
+            <span class="panel-title" id="left-title">Select a SOAP note</span>
+        </div>
+        <div class="analyze-bar" id="analyze-bar" style="display:none">
+            <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">
+                <div class="spinner-sm"></div>
+                <span class="btn-label">▶&nbsp;Analyze</span>
+            </button>
+            <span class="timing-badge" id="timing-badge" style="display:none"></span>
+            <span class="api-url-label">POST /analyze</span>
+        </div>
+        <div id="sufficiency-bar"></div>
+        <div class="soap-raw" id="soap-raw">
+            <div class="empty-state" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+                <div class="empty-icon">📋</div>
+                <div class="empty-text">Select a SOAP note from the list</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-col" id="right-col">
+        <div id="right-content">
+            <div class="empty-state" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+                <div class="empty-icon">🔬</div>
+                <div class="empty-text">Pipeline output will appear here</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ADD SOAP MODAL -->
+<div class="modal-overlay" id="modal">
+    <div class="modal">
+        <div class="modal-head">
+            <span class="modal-title-text">Add SOAP Note</span>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-label">Case Title</div>
+            <input class="modal-input" id="modal-case-title" placeholder="e.g. 34yo Male — Rash + Joint Pain" />
+            <div class="modal-label">Clinical Note (SOAP / Free Text)</div>
+            <textarea class="modal-textarea" id="modal-case-text" placeholder="Paste or type the clinical note here..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="addSoap()">Add Note</button>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+// ============================================================
+//  CONFIG — uses relative URL so nginx can proxy to the
+//  orchestrator regardless of host/port.
+// ============================================================
+const API_ANALYZE  = '/analyze';
+const API_SYS_HEALTH = '/sys/health';
+
+// ============================================================
+//  PRELOADED SOAPS
+// ============================================================
+const SOAPS = [
+{
+    id: 1,
+    title: '34yo Male — Rash + Arthralgia',
+    meta: 'Infectious',
+    text: `PATIENT: Male, 34 years old. Forest ranger.
+
+CHIEF COMPLAINT: Expanding skin rash on right thigh and bilateral knee joint pain for 10 days.
+
+HISTORY OF PRESENT ILLNESS: Patient noticed a bull's-eye shaped rash on his right thigh approximately 8 days ago. The rash has been progressively expanding. He also reports bilateral knee joint pain and stiffness, worse in the morning. Associated fatigue and low-grade fever. Patient recalls a hiking trip in Connecticut 3 weeks ago with prolonged outdoor exposure in wooded areas. No tick bite was noticed, but exposure was significant.
+
+PAST MEDICAL HISTORY: No significant past medical history. No prior joint disease.
+
+MEDICATIONS: None currently.
+
+ALLERGIES: Penicillin — skin rash.
+
+SOCIAL HISTORY: Works as a forest ranger with frequent exposure to wooded environments. Non-smoker, occasional alcohol use.
+
+VITAL SIGNS: Temperature 38.1°C, Blood Pressure 118/76 mmHg, Heart Rate 92 bpm, Respiratory Rate 16/min, SpO₂ 98% on room air.
+
+PHYSICAL EXAMINATION: Erythema migrans — annular rash approximately 12 cm in diameter on right thigh with central clearing. Mild bilateral knee effusion noted on palpation. No neck stiffness. Lungs clear to auscultation.
+
+LABORATORY RESULTS: WBC 11.2 × 10⁹/L (elevated), ESR 42 mm/hr (elevated), CRP 18 mg/L (elevated). Lyme ELISA sent — pending.
+
+IMAGING: Bilateral knee X-ray: mild joint effusion bilaterally, no erosive changes, joint space preserved.`
+},
+{
+    id: 2,
+    title: '67yo Female — Cough + Dyspnea',
+    meta: 'Respiratory',
+    text: `PATIENT: Female, 67 years old. Retired school teacher.
+
+CHIEF COMPLAINT: Productive cough and shortness of breath for 5 days.
+
+HISTORY OF PRESENT ILLNESS: Patient presents with a 5-day history of productive cough with yellow-green sputum, progressive dyspnea on exertion, and pleuritic chest pain on the right side. Fever developed 3 days ago. She denies hemoptysis. No sick contacts reported.
+
+PAST MEDICAL HISTORY: Type 2 Diabetes Mellitus (on metformin), Hypertension (on lisinopril). No prior pulmonary disease.
+
+MEDICATIONS: Metformin 1000 mg BID, Lisinopril 10 mg QD.
+
+VITAL SIGNS: Temperature 38.9°C, Blood Pressure 138/84 mmHg, Heart Rate 104 bpm, Respiratory Rate 22/min, SpO₂ 94% on room air.
+
+PHYSICAL EXAMINATION: Decreased breath sounds and dullness to percussion at right lower lobe. Crackles heard on auscultation right base. No wheeze.
+
+LABORATORY RESULTS: WBC 15.8 × 10⁹/L (elevated, neutrophilia), CRP 94 mg/L (markedly elevated), Procalcitonin 2.1 ng/mL (elevated). Blood cultures × 2 sent.
+
+IMAGING: Chest X-ray: right lower lobe consolidation, no pleural effusion, no pneumothorax.`
+},
+{
+    id: 3,
+    title: '52yo Male — Chest Pain + Diaphoresis',
+    meta: 'Cardiac',
+    text: `PATIENT: Male, 52 years old. Accountant.
+
+CHIEF COMPLAINT: Sudden-onset chest pain and diaphoresis for 45 minutes.
+
+HISTORY OF PRESENT ILLNESS: Patient presents with sudden-onset crushing substernal chest pain radiating to the left arm and jaw, associated with diaphoresis and nausea. Onset at rest. No relief with position change. Denies shortness of breath. History of hypertension and hyperlipidemia.
+
+MEDICATIONS: Amlodipine 5 mg QD, Atorvastatin 40 mg QD.
+
+VITAL SIGNS: Blood Pressure 158/96 mmHg, Heart Rate 98 bpm, Respiratory Rate 18/min, SpO₂ 97% on room air.
+
+PHYSICAL EXAMINATION: Diaphoretic. Cardiovascular exam: regular rate and rhythm, no murmurs. Lungs clear. No leg edema.
+
+LABORATORY RESULTS: Troponin I 4.8 ng/mL (markedly elevated), CK-MB 42 U/L (elevated). BMP within normal limits.
+
+ECG: ST elevation in leads II, III, aVF. Reciprocal changes in I, aVL.`
+},
+];
+
+// ============================================================
+//  STATE
+// ============================================================
+let activeId   = null;
+let isDark     = false;
+const cache    = {};        // { [id]: apiResponse }
+
+// ============================================================
+//  API — ANALYZE
+// ============================================================
+async function callAnalyze(text) {
+    const resp = await fetch(API_ANALYZE, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ text }),
+    });
+    if (!resp.ok) {
+        let msg = `HTTP ${resp.status}`;
+        try {
+            const j = await resp.json();
+            msg = j.detail || j.error || msg;
+            if (typeof msg === 'object') msg = JSON.stringify(msg);
+        } catch (_) {}
+        throw new Error(msg);
+    }
+    return resp.json();
+}
+
+// ============================================================
+//  API — SYSTEM HEALTH
+// ============================================================
+async function pollSystemHealth() {
+    const setDot = (id, state) => {
+        const el = document.getElementById(id);
+        if (el) el.className = `svc-dot ${state}`;
+    };
+
+    // Mark all as polling
+    ['dot-ner','dot-embed','dot-llm','dot-orchestrator'].forEach(id => setDot(id,'unknown'));
+
+    try {
+        const resp = await fetch(API_SYS_HEALTH, { signal: AbortSignal.timeout(10000) });
+        if (!resp.ok) throw new Error();
+        const data = await resp.json();
+
+        const svcs = data.services || {};
+        const state = s => (s && s.status === 'ok') ? 'up' : 'down';
+
+        setDot('dot-ner',          state(svcs.ner));
+        setDot('dot-embed',        state(svcs.embedding));
+        setDot('dot-llm',          state(svcs.llm));
+        setDot('dot-orchestrator', state(svcs.orchestrator));
+    } catch (_) {
+        // Orchestrator unreachable
+        ['dot-ner','dot-embed','dot-llm','dot-orchestrator'].forEach(id => setDot(id,'down'));
+    }
+}
+
+// ============================================================
+//  RUN PIPELINE
+// ============================================================
+async function runAnalysis() {
+    const soap = SOAPS.find(s => s.id === activeId);
+    if (!soap) return;
+
+    const btn    = document.getElementById('analyze-btn');
+    const timing = document.getElementById('timing-badge');
+
+    btn.disabled = true;
+    btn.classList.add('loading');
+    timing.style.display = 'none';
+    renderLoadingState();
+
+    const t0 = performance.now();
+
+    try {
+        const data = await callAnalyze(soap.text);
+        const wallMs = Math.round(performance.now() - t0);
+
+        cache[activeId] = data;
+        soap.analyzed   = true;
+        renderSidebar();
+
+        const pipeMs = (data.pipeline_meta || {}).total_duration_ms || wallMs;
+        timing.textContent  = `${(pipeMs / 1000).toFixed(1)}s`;
+        timing.style.display = '';
+
+        renderSufficiencyAnalyzed(data);
+        renderHighlightedText(soap.text, data.entities_raw || []);
+        renderPipelineResult(data, pipeMs);
+
+    } catch (err) {
+        renderErrorState(err.message || String(err));
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+    }
+}
+
+// ============================================================
+//  SIDEBAR
+// ============================================================
+function renderSidebar() {
+    const list = document.getElementById('soap-list');
+    list.innerHTML = SOAPS.map(s => {
+        const done  = !!cache[s.id];
+        return `
+        <div class="soap-item ${s.id === activeId ? 'active' : ''}" onclick="selectSoap(${s.id})">
+            <div class="soap-item-title">${esc(s.title)}</div>
+            <div class="soap-item-meta">${esc(s.meta)}</div>
+            <span class="soap-status ${done ? 'analyzed' : 'ready'}">
+                <span class="dot"></span>${done ? 'Analyzed' : 'Ready'}
+            </span>
+        </div>`;
+    }).join('');
+}
+
+// ============================================================
+//  SELECT SOAP
+// ============================================================
+function selectSoap(id) {
+    activeId = id;
+    renderSidebar();
+    const soap = SOAPS.find(s => s.id === id);
+
+    document.getElementById('left-title').textContent = soap.title;
+    document.getElementById('analyze-bar').style.display  = 'flex';
+    document.getElementById('timing-badge').style.display = 'none';
+
+    const cached = cache[id];
+    if (cached) {
+        const meta = cached.pipeline_meta;
+        if (meta) {
+            const tb = document.getElementById('timing-badge');
+            tb.textContent   = `${(meta.total_duration_ms / 1000).toFixed(1)}s`;
+            tb.style.display = '';
+        }
+        renderSufficiencyAnalyzed(cached);
+        renderHighlightedText(soap.text, cached.entities_raw || []);
+        renderPipelineResult(cached, cached.pipeline_meta ? cached.pipeline_meta.total_duration_ms : null);
+    } else {
+        renderSufficiencyReady();
+        document.getElementById('soap-raw').textContent = soap.text;
+        renderRightEmpty();
+    }
+}
+
+// ============================================================
+//  LEFT PANEL — sufficiency bars
+// ============================================================
+function renderSufficiencyReady() {
+    const bar = document.getElementById('sufficiency-bar');
+    bar.className = 'sufficiency-bar ready';
+    bar.innerHTML = `<span class="suf-icon">●</span><span class="suf-text"><strong>Ready</strong> — click Analyze to run the NLP pipeline.</span>`;
+}
+
+function renderSufficiencyAnalyzed(data) {
+    const bar = document.getElementById('sufficiency-bar');
+    bar.className = 'sufficiency-bar analyzed';
+    const nDiag = (data.diagnoses || []).length;
+    const nEnt  = (data.entities_raw || []).length;
+    const nNorm = (data.entities_normalized || []).length;
+    bar.innerHTML = `
+        <span class="suf-icon">✓</span>
+        <span class="suf-text"><strong>Analysis complete</strong></span>
+        <div class="pipe-summary">
+            <span class="pipe-summary-badge">${nEnt} entities</span>
+            <span class="pipe-summary-badge">${nNorm} clusters</span>
+            <span class="pipe-summary-badge">${nDiag} diagnoses</span>
+        </div>`;
+}
+
+// ============================================================
+//  LEFT PANEL — entity highlights
+// ============================================================
+function renderHighlightedText(text, rawEntities) {
+    const el = document.getElementById('soap-raw');
+
+    if (!rawEntities.length) { el.textContent = text; return; }
+
+    const labelCls = l => {
+        l = (l || '').toLowerCase();
+        if (l.includes('symptom')) return 'hl-symptom';
+        if (l.includes('disease')) return 'hl-disease';
+        if (l.includes('finding')) return 'hl-finding';
+        return 'hl-other';
+    };
+
+    const spans = rawEntities
+        .filter(e => e.start >= 0 && e.end > e.start && !e.negated)
+        .sort((a, b) => a.start - b.start);
+
+    // Merge overlapping
+    const merged = [];
+    for (const s of spans) {
+        if (merged.length && s.start < merged[merged.length - 1].end) {
+            const p = merged[merged.length - 1];
+            if (s.end > p.end) { p.end = s.end; p.label = s.label; }
+        } else {
+            merged.push({ ...s });
+        }
+    }
+
+    let html = '', cursor = 0;
+    for (const sp of merged) {
+        if (sp.start > cursor) html += escStr(text.slice(cursor, sp.start));
+        html += `<span class="hl-span ${labelCls(sp.label)}" title="${escStr(sp.label)}: ${escStr(sp.text)}">${escStr(text.slice(sp.start, sp.end))}</span>`;
+        cursor = sp.end;
+    }
+    if (cursor < text.length) html += escStr(text.slice(cursor));
+
+    el.innerHTML = html.replace(/\n/g, '<br>');
+}
+
+// ============================================================
+//  RIGHT PANEL — states
+// ============================================================
+function renderRightEmpty() {
+    document.getElementById('right-content').innerHTML = `
+        <div class="empty-state" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+            <div class="empty-icon">🔬</div>
+            <div class="empty-text">Click Analyze to run the pipeline</div>
+        </div>`;
+}
+
+function renderLoadingState() {
+    const stages = [
+        '1 · Preprocessing', '2 · Dual NER (parallel)', '3 · Aggregation',
+        '4 · Semantic embeddings', '5 · LLM categorization',
+        '6 · Candidate generation', '7 · LLM reasoning',
+        '8 · Ranking', '9 · Consistency check',
+    ];
+    document.getElementById('right-content').innerHTML = `
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <div class="loading-text">Running pipeline…</div>
+            <div class="loading-stages">${
+                stages.map((s,i) => `<div class="loading-stage" id="ls${i}"><span class="stage-dot"></span>${s}</div>`).join('')
+            }</div>
+        </div>`;
+    let i = 0;
+    const tick = setInterval(() => {
+        if (i > 0) { const p = document.getElementById(`ls${i-1}`); if(p) p.className='loading-stage done'; }
+        const c = document.getElementById(`ls${i}`); if(c) c.className='loading-stage active';
+        if (++i >= stages.length) clearInterval(tick);
+    }, 340);
+}
+
+function renderErrorState(msg) {
+    document.getElementById('right-content').innerHTML = `
+        <div class="error-state">
+            <div class="error-icon">⚠</div>
+            <div class="error-title">Pipeline error</div>
+            <div class="error-detail">${esc(msg)}</div>
+            <button class="retry-btn" onclick="runAnalysis()">↻ Retry</button>
+        </div>`;
+}
+
+// ============================================================
+//  RIGHT PANEL — full pipeline result
+// ============================================================
+function renderPipelineResult(data, pipeMs) {
+    const rc = document.getElementById('right-content');
+
+    const diagnoses  = data.diagnoses            || [];
+    const normalized = data.entities_normalized  || [];
+    const categorized= data.categorized_entities || {};
+    const raw        = data.entities_raw         || [];
+    const meta       = data.pipeline_meta        || null;
+
+    const msLabel = pipeMs ? `${(pipeMs/1000).toFixed(1)}s` : '';
+
+    rc.innerHTML = `
+        <div class="panel-head">
+            <span class="panel-title">Pipeline Output</span>
+            ${msLabel ? `<span class="timing-badge" style="margin-left:auto">${msLabel}</span>` : ''}
+        </div>
+        <div class="pipeline-out" id="pipeline-out"></div>
+        <div class="disclaimer">
+            <span class="disclaimer-icon">⚠</span>
+            <span><strong>Decision support only.</strong> Not a final diagnosis. All clinical decisions must be confirmed by a qualified physician.</span>
+        </div>`;
+
+    const out = document.getElementById('pipeline-out');
+    out.appendChild(buildDiagnosesSection(diagnoses));
+    out.appendChild(buildCategorizedSection(categorized));
+    out.appendChild(buildNormalizedSection(normalized));
+    out.appendChild(buildRawSection(raw));
+    if (meta && (meta.stage_timings||[]).length) out.appendChild(buildTimingSection(meta));
+    out.appendChild(buildJsonDebug(data));
+}
+
+// ── Diagnoses ─────────────────────────────────────────────────
+function buildDiagnosesSection(diagnoses) {
+    const wrap = makeSection('🔴 Diagnoses', diagnoses.length, 'red', true);
+    const body = wrap.querySelector('.pipe-section-body');
+    if (!diagnoses.length) { body.innerHTML = '<div class="empty-cat">No diagnoses returned.</div>'; return wrap; }
+    const sorted = [...diagnoses].sort((a, b) => b.confidence - a.confidence);
+    body.innerHTML = sorted.map((d, i) => {
+        const pct = Math.round((d.confidence||0)*100);
+        const cls = pct >= 60 ? 'high' : pct >= 30 ? 'mid' : 'low';
+        const evidenceHtml = (d.evidence||[]).length
+            ? `<div class="diag-evidence-label">Evidence</div>
+               <div class="evidence-chips">${d.evidence.map(e=>`<span class="evidence-chip">${esc(e)}</span>`).join('')}</div>`
+            : '';
+        return `
+            <div class="diag-card">
+                <div class="diag-card-head">
+                    <div class="diag-rank ${i===0?'top':''}">${i+1}</div>
+                    <div class="diag-name">${esc(d.name)}</div>
+                    <span class="conf-badge conf-${cls}"></span>
+                </div>
+                <div class="conf-bar-wrap">
+                    <div class="conf-bar-fill conf-fill-${cls}" style="width:${pct}%"></div>
+                </div>
+                <div class="diag-body">
+                    ${d.reasoning ? `<div class="diag-reasoning">${esc(d.reasoning)}</div>` : ''}
+                    ${d.consistency_note ? `<div class="diag-consistency">⚠ ${esc(d.consistency_note)}</div>` : ''}
+                    ${evidenceHtml}
+                </div>
+            </div>`;
+    }).join('');
+    return wrap;
+}
+
+// ── Categorized ───────────────────────────────────────────────
+function buildCategorizedSection(cat) {
+    const total = Object.values(cat).flat().length;
+    const wrap  = makeSection('🟡 Categorized Entities', total, 'amber', true);
+    const body  = wrap.querySelector('.pipe-section-body');
+    const groups = [
+        {key:'symptoms',   label:'Symptoms',   cls:'c-symptom'},
+        {key:'diseases',   label:'Diseases',   cls:'c-disease'},
+        {key:'findings',   label:'Findings',   cls:'c-finding'},
+        {key:'procedures', label:'Procedures', cls:'c-procedure'},
+        {key:'other',      label:'Other',      cls:'c-other'},
+    ];
+    const rows = groups.filter(g=>(cat[g.key]||[]).length).map(g => `
+        <div>
+            <div class="cat-group-label">${g.label} (${cat[g.key].length})</div>
+            <div class="cat-chips">${cat[g.key].map(e=>`<span class="cat-chip ${g.cls}">${esc(e)}</span>`).join('')}</div>
+        </div>`).join('');
+    body.innerHTML = `<div class="cat-groups">${rows||'<div class="empty-cat">No entities categorized.</div>'}</div>`;
+    return wrap;
+}
+
+// ── Normalized clusters ────────────────────────────────────────
+function buildNormalizedSection(normalized) {
+    const wrap = makeSection('🟩 Normalized Entities', normalized.length, 'green', false);
+    const body = wrap.querySelector('.pipe-section-body');
+    if (!normalized.length) { body.innerHTML='<div class="empty-cat">No normalized entities.</div>'; return wrap; }
+    body.innerHTML = `<div class="cluster-grid">${normalized.map(e => {
+        const variants = (e.variants||[]).length
+            ? `<div class="cluster-variants">${e.variants.map(v=>`<span class="variant-chip">${esc(v)}</span>`).join('')}</div>` : '';
+        return `
+            <div class="cluster-card">
+                <div class="cluster-canonical">
+                    ${esc(e.canonical)}
+                    <span class="cluster-label-badge">${esc(e.label)}</span>
+                    ${e.negated ? '<span class="negated-flag">negated</span>' : ''}
+                </div>
+                <div class="cluster-meta">
+                    <span>${e.mention_count} mention${e.mention_count!==1?'s':''}</span>
+                    ${(e.variants||[]).length?`<span>${e.variants.length} variant${e.variants.length!==1?'s':''}</span>`:''}
+                </div>
+                ${variants}
+            </div>`;
+    }).join('')}</div>`;
+    return wrap;
+}
+
+// ── Raw entities ──────────────────────────────────────────────
+function buildRawSection(raw) {
+    const wrap = makeSection('🟦 Raw Entities', raw.length, 'blue', false);
+    const body = wrap.querySelector('.pipe-section-body');
+    if (!raw.length) { body.innerHTML='<div class="empty-cat">No raw entities.</div>'; return wrap; }
+    body.innerHTML = `<div style="overflow-x:auto"><table class="raw-ent-table">
+        <thead><tr><th>Entity</th><th>Label</th><th>Source</th><th>Offsets</th></tr></thead>
+        <tbody>${raw.map(e=>`<tr>
+            <td><span class="ent-text-cell ${e.negated?'ent-negated':''}">${esc(e.text)}</span></td>
+            <td><span class="ent-label-badge">${esc(e.label)}</span></td>
+            <td><span class="ent-source-badge">${esc(e.source)}</span></td>
+            <td><span class="ent-offset">${e.start}–${e.end}</span></td>
+        </tr>`).join('')}</tbody>
+    </table></div>`;
+    return wrap;
+}
+
+// ── Stage timings ─────────────────────────────────────────────
+function buildTimingSection(meta) {
+    const wrap = makeSection('⏱ Stage Timings', null, 'purple', false);
+    const body = wrap.querySelector('.pipe-section-body');
+    const maxMs = Math.max(...meta.stage_timings.map(t=>t.duration_ms), 1);
+    body.innerHTML = meta.stage_timings.map(t => {
+        const pct = Math.round((t.duration_ms/maxMs)*100);
+        return `<div style="margin-bottom:6px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+                <span style="font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace">${esc(t.stage)}</span>
+                <span style="font-size:10px;color:var(--text-xs);font-family:'JetBrains Mono',monospace">${t.duration_ms}ms</span>
+            </div>
+            <div style="height:3px;background:var(--border);border-radius:2px">
+                <div style="height:100%;width:${pct}%;background:var(--purple);border-radius:2px"></div>
+            </div>
+        </div>`;
+    }).join('')
+    + `<div style="font-size:10px;color:var(--text-dim);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        Total: <strong>${meta.total_duration_ms}ms</strong> ·
+        ${meta.entity_count_raw} raw → ${meta.entity_count_normalized} clusters
+       </div>`;
+    return wrap;
+}
+
+// ── JSON debug ────────────────────────────────────────────────
+function buildJsonDebug(data) {
+    const wrap = document.createElement('div');
+    wrap.style.flexShrink = '0';
+    const jsonStr = JSON.stringify(data, null, 2);
+    wrap.innerHTML = `
+        <div class="json-debug-head" onclick="toggleJsonPanel(this)">
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace">{ }</span>
+            <span class="json-toggle-label">Show Raw JSON</span>
+            <button class="json-copy-btn" onclick="copyJson(event)">Copy</button>
+            <span class="pipe-arrow">▶</span>
+        </div>
+        <div class="json-debug-body">
+            <pre class="json-pre" id="json-raw">${esc(jsonStr)}</pre>
+        </div>`;
+    return wrap;
+}
+function toggleJsonPanel(h) {
+    const b = h.nextElementSibling;
+    const a = h.querySelector('.pipe-arrow');
+    const open = b.classList.toggle('open');
+    a.classList.toggle('open', open);
+    h.querySelector('.json-toggle-label').textContent = open ? 'Hide Raw JSON' : 'Show Raw JSON';
+}
+function copyJson(e) {
+    e.stopPropagation();
+    const pre = document.getElementById('json-raw');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.textContent).then(() => {
+        e.target.textContent = 'Copied!';
+        setTimeout(() => e.target.textContent = 'Copy', 1500);
+    });
+}
+
+// ── Section factory ───────────────────────────────────────────
+function makeSection(title, count, dotColor, open) {
+    const d = document.createElement('div');
+    d.className = 'pipe-section';
+    d.innerHTML = `
+        <div class="pipe-section-head" onclick="toggleSection(this)">
+            <div class="pipe-dot ${dotColor}"></div>
+            <span class="pipe-section-title">${title}</span>
+            ${count !== null ? `<span class="pipe-count">${count}</span>` : ''}
+            <span class="pipe-arrow ${open?'open':''}">▶</span>
+        </div>
+        <div class="pipe-section-body ${open?'open':''}"></div>`;
+    return d;
+}
+function toggleSection(h) {
+    const b = h.nextElementSibling;
+    const a = h.querySelector('.pipe-arrow');
+    const open = b.classList.toggle('open');
+    a.classList.toggle('open', open);
+}
+
+// ============================================================
+//  MODAL
+// ============================================================
+function openModal() {
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('modal-case-title').focus();
+}
+function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    document.getElementById('modal-case-title').value = '';
+    document.getElementById('modal-case-text').value  = '';
+}
+function addSoap() {
+    const title = document.getElementById('modal-case-title').value.trim();
+    const text  = document.getElementById('modal-case-text').value.trim();
+    if (!title || !text) return;
+    const id = Date.now();
+    SOAPS.push({ id, title, meta: 'Custom', text });
+    closeModal();
+    selectSoap(id);
+}
+
+// ============================================================
+//  THEME
+// ============================================================
+function toggleTheme() {
+    isDark = !isDark;
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    document.getElementById('theme-btn').textContent = isDark ? '☀' : '☾';
+}
+
+// ============================================================
+//  UTILS
+// ============================================================
+function esc(s)    { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escStr(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ============================================================
+//  INIT
+// ============================================================
+renderSidebar();
+selectSoap(1);
+
+// Poll system health on load, then every 30s
+pollSystemHealth();
+setInterval(pollSystemHealth, 30_000);
+</script>
+</body>
+</html>

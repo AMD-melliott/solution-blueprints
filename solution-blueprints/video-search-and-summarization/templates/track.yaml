@@ -1,0 +1,68 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+{{/*
+Object detection + multi-object tracking (YOLO11 + ByteTrack) on a GPU. Image is built
+by the CI pipeline from the components/track directory.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aimsb-video-search-and-summarization.track.name" . }}
+  labels:
+    {{- include "aimsb-video-search-and-summarization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: track
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ include "aimsb-video-search-and-summarization.track.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "aimsb-video-search-and-summarization.track.name" . }}
+        app.kubernetes.io/component: track
+    spec:
+      containers:
+        - name: track
+          image: {{ printf "%s:%s" .Values.track.image.repository (tpl .Values.track.image.tag .) | quote }}
+          env:
+            - name: TRACK_MODEL
+              value: {{ .Values.track.model | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.track.port }}
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 60
+          resources:
+            {{- toYaml .Values.track.resources | nindent 12 }}
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.track.shmSize | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aimsb-video-search-and-summarization.track.name" . }}
+  labels:
+    {{- include "aimsb-video-search-and-summarization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: track
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "aimsb-video-search-and-summarization.track.name" . }}
+  ports:
+    - name: http
+      port: {{ .Values.track.port }}
+      targetPort: http

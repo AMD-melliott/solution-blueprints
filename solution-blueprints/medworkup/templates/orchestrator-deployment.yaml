@@ -1,0 +1,60 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "medworkup.fullname" . }}-orchestrator
+  labels:
+    {{- include "medworkup.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "medworkup.fullname" . }}-orchestrator
+  template:
+    metadata:
+      labels:
+        app: {{ include "medworkup.fullname" . }}-orchestrator
+    spec:
+      {{- include "medworkup.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: orchestrator
+          image: {{ include "medworkup.image" (dict "root" . "svc" .Values.images.orchestrator) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.ports.orchestrator }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "medworkup.fullname" . }}-config
+          {{- if or .Values.medgemma.apiKeySecretRef .Values.medgemma.apiKey }}
+          env:
+            - name: LLM_API_KEY
+              {{- if .Values.medgemma.apiKeySecretRef }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.medgemma.apiKeySecretRef.name }}
+                  key: {{ .Values.medgemma.apiKeySecretRef.key }}
+              {{- else }}
+              value: {{ .Values.medgemma.apiKey | quote }}
+              {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.orchestrator.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.ports.orchestrator }}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.ports.orchestrator }}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3

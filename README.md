@@ -19,17 +19,20 @@ Code and resources for AMD Inference Microservice Solution Blueprints
 | code-docs-builder | aimsb-codedocs |
 | continuedev-assistant | aimsb-continuedev-assistant |
 | document-summarization | aimsb-docsum |
+| fintech-fraud-detection | aimsb-fintech-fraud-detection |
 | fintech-onboarding | aimsb-fintech-onboarding |
 | fsi | aimsb-fsi |
 | llm-chat | aimsb-llm-chat |
 | llm-router | aimsb-llm-router |
 | med-assist | aimsb-med-assist |
+| medworkup | aimsb-medworkup |
 | mri-doc | aimsb-mri-doc |
 | pdf-to-podcast | aimsb-pdf-to-podcast |
 | preventative-healthcare | aimsb-preventative-healthcare |
 | report-generation-engine | aimsb-report-generation-engine |
 | talk-to-your-documents | aimsb-talk-to-your-documents |
 | telecom-assistant | aimsb-telecom-assistant |
+| video-search-and-summarization | aimsb-video-search-and-summarization |
 <!-- CHART_TABLE_END -->
 
 ## Versioning

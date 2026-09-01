@@ -1,0 +1,39 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+{{- if .Values.storage.hfCache.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "medworkup.fullname" . }}-hf-cache
+  labels:
+    {{- include "medworkup.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.storage.hfCache.storageClassName }}
+  storageClassName: {{ .Values.storage.hfCache.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.storage.hfCache.size }}
+{{- end }}
+{{- if .Values.medcat.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "medworkup.fullname" . }}-model-artifacts
+  labels:
+    {{- include "medworkup.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.storage.modelArtifacts.storageClassName }}
+  storageClassName: {{ .Values.storage.modelArtifacts.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.storage.modelArtifacts.size }}
+{{- end }}

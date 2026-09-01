@@ -1,0 +1,19 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+{{- if .Values.medcat.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "medworkup.fullname" . }}-medcat
+  labels:
+    {{- include "medworkup.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.ports.medcat }}
+      targetPort: {{ .Values.ports.medcat }}
+  selector:
+    app: {{ include "medworkup.fullname" . }}-medcat
+{{- end }}

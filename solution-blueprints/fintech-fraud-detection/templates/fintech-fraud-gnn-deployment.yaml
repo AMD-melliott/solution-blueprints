@@ -1,0 +1,83 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fintech.complexName" . }}-gnn
+  labels:
+    {{- include "fintech.labels" . | nindent 4 }}
+    app: {{ include "fintech.complexName" . }}-gnn
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "fintech.complexName" . }}-gnn
+  template:
+    metadata:
+      labels:
+        app: {{ include "fintech.complexName" . }}-gnn
+    spec:
+      {{- include "fintech.imagePullSecrets" . | nindent 6 }}
+      initContainers:
+        - name: download-artifacts
+          image: {{ .Values.artifacts.initImage }}
+          command:
+            - sh
+            - -c
+            - |
+              pip install -q huggingface_hub && \
+              [ -f /app/artifacts/.download_complete ] || \
+              (hf download {{ .Values.artifacts.gnn.hfRepo }} --local-dir /app/artifacts && \
+              touch /app/artifacts/.download_complete)
+          env:
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.hfSecret.name }}
+                  key: {{ .Values.hfSecret.key }}
+          volumeMounts:
+            - name: artifacts
+              mountPath: /app/artifacts
+      containers:
+        - name: gnn
+          image: "{{ .Values.images.gnn.repository }}:{{ tpl .Values.images.gnn.tag . }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ports.gnn }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: {{ .Values.ports.gnn | quote }}
+            {{- range $key, $value := .Values.env_vars.gnn }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources.gnn | nindent 12 }}
+          volumeMounts:
+            - name: artifacts
+              mountPath: /app/artifacts
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.ports.gnn }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.ports.gnn }}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: artifacts
+          persistentVolumeClaim:
+            claimName: {{ include "fintech.complexName" . }}-gnn-artifacts

@@ -90,6 +90,32 @@ spec:
               python3 -m main
           ports:
             - containerPort: {{ .Values.backend.port }}
+          # No dedicated health endpoint; FastAPI's default /docs always returns 200.
+          startupProbe:
+            httpGet:
+              path: /docs
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 180
+          livenessProbe:
+            httpGet:
+              path: /docs
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /docs
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
           volumeMounts:
             - name: workload-mount
               mountPath: /workload/mount

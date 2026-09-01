@@ -1,0 +1,81 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: 4fr 3fr;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+  padding: 20px 40px 0;
+}
+
+.pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.paneHead {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.paneTitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.pillCount {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--red-dim);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--red-bright);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pillDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+}
+
+.tableWrap {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+.tableWrap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.tableWrap::-webkit-scrollbar-thumb {
+  background: var(--border-b);
+  border-radius: 3px;
+}

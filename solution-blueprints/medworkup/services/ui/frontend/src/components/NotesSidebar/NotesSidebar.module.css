@@ -1,0 +1,128 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.head {
+  height: var(--col-head-h);
+  flex-shrink: 0;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.newBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--btn-h);
+  padding: 0 14px;
+  border-radius: var(--btn-radius);
+  border: 1px solid var(--border-b);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.newBtn:hover {
+  background: var(--surface);
+  border-color: var(--blue-action);
+}
+
+/* note list */
+.list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.item {
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  transition: background 0.12s;
+}
+.item:hover {
+  background: var(--surface-2);
+}
+.item.active {
+  background: var(--surface-2);
+  border-left-color: var(--blue-action);
+}
+
+.itemTitle {
+  padding: 12px 0px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.itemMeta {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+/* status pill — 22px tall, 2px 6px padding */
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusPill.ready {
+  background: var(--ready-bg);
+  border-color: var(--ready-border);
+  color: #84b7ff;
+}
+.statusPill.ready .statusDot {
+  background: var(--ready-dot);
+}
+
+.statusPill.analyzed {
+  background: var(--sysready-bg);
+  border-color: var(--sysready-border);
+  color: var(--sysready-text);
+}
+.statusPill.analyzed .statusDot {
+  background: var(--hdr-dot-green);
+}
+
+.statusPill.insufficient {
+  background: var(--insuf-bg);
+  border-color: var(--insuf-border);
+  color: var(--insuf-text);
+}
+.statusPill.insufficient .statusDot {
+  background: var(--insuf-dot);
+}

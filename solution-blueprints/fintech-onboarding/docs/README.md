@@ -80,7 +80,7 @@ This blueprint can be deployed on **AMD Instinct** (default) and **AMD Radeon**.
 To deploy to the Kubernetes cluster, ensure the following prerequisites are met:
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/): Installed and configured to communicate with the cluster
-- [Helm](https://helm.sh/docs/intro/install/) 3.17 or higher: Installed on your local machine
+- [Helm](https://helm.sh/docs/intro/install/) 3.16 – 4.2.0: Installed on your local machine
 
 ### Deployment
 

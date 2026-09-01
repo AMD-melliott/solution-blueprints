@@ -1,0 +1,280 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HC-1
+#
+# Services
+# ────────
+#   ui                  nginx static server + reverse proxy          :8080
+#   orchestrator        FastAPI NLP pipeline orchestrator            :8003 (internal + debug)
+#   ner-service         GLiNER biomedical NER (ONNX or HuggingFace)  :8001 (internal + debug)
+#   embedding-service   SapBERT ONNX embedding                       :8002 (internal + debug)
+#   medcat-service      MedCAT NER+L REST API (CogStack)             :8004 (internal + debug)
+#   medgemma            MedGemma 27B via AMD AIM                     :8000 (internal + direct)
+#
+# User-facing entry point:  http://localhost:8080
+# Direct orchestrator API:  http://localhost:8003/analyze
+# Swagger UI:               http://localhost:8003/docs
+# MedCAT API:               http://localhost:8004/api/info
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  hc-net:
+    driver: bridge
+
+volumes:
+  hf-cache:
+
+# ── Reusable fragments ────────────────────────────────────────────────────────
+x-ml-env: &ml-env
+  OMP_NUM_THREADS:  "${OMP_NUM_THREADS:-4}"
+  MKL_NUM_THREADS:  "${MKL_NUM_THREADS:-4}"
+  LOG_LEVEL:        "${LOG_LEVEL:-info}"
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "20m"
+      max-file: "5"
+
+services:
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 1. UI — nginx reverse proxy + static HTML
+  # ───────────────────────────────────────────────────────────────────────────
+  ui:
+    <<: [*restart, *logging]
+    build:
+      context: ./services/ui
+      dockerfile: Dockerfile
+    container_name: ui
+    ports:
+      - "${UI_PORT:-8080}:8080"
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    networks:
+      - hc-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/nginx-health"]
+      interval: 15s
+      timeout:  5s
+      retries:  3
+      start_period: 10s
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 2. Orchestrator
+  # ───────────────────────────────────────────────────────────────────────────
+  orchestrator:
+    <<: [*restart, *logging]
+    build:
+      context: ./services/orchestrator
+      dockerfile: Dockerfile
+    container_name: orchestrator
+    ports:
+      - "${ORCHESTRATOR_PORT:-8003}:8003"   # exposed for direct dev/debug access
+    environment:
+      # Downstream services — use Docker service-name hostnames
+      LLM_BASE_URL:       "http://medgemma:8000"
+      NER_BASE_URL:       "http://ner-service:8001"
+      EMBEDDING_BASE_URL: "http://embedding-service:8002"
+      MEDCAT_BASE_URL:    "http://medcat-service:8004"
+      # LLM
+      LLM_MODEL:       "${LLM_MODEL:-google/medgemma-27b-it}"
+      LLM_TEMPERATURE: "${LLM_TEMPERATURE:-0.1}"
+      LLM_MAX_TOKENS:  "${LLM_MAX_TOKENS:-2048}"
+      LLM_TIMEOUT:     "${LLM_TIMEOUT:-120}"
+      # Pipeline
+      ENTITY_SIMILARITY_THRESHOLD: "${ENTITY_SIMILARITY_THRESHOLD:-0.85}"
+      DIAGNOSIS_MIN_CONFIDENCE:    "${DIAGNOSIS_MIN_CONFIDENCE:-0.05}"
+      EXPAND_ABBREVIATIONS:        "${EXPAND_ABBREVIATIONS:-true}"
+      # CORS — allow all origins (nginx is the real access control)
+      CORS_ORIGINS:  "*"
+      # Observability
+      LOG_LEVEL:      "${LOG_LEVEL:-info}"
+      DEBUG_PIPELINE: "${DEBUG_PIPELINE:-false}"
+    depends_on:
+      ner-service:
+        condition: service_healthy
+      embedding-service:
+        condition: service_healthy
+      medcat-service:
+        condition: service_started  # model loading takes 2-5+ min; orchestrator handles unavailability at request time
+      medgemma:
+        condition: service_started  # first-run download is 10-70+ min; orchestrator handles unavailability at request time
+    networks:
+      - hc-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 15s
+      timeout:  5s
+      retries:  3
+      start_period: 20s
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 3. NER Service — GLiNER (ONNX or HuggingFace)
+  # ───────────────────────────────────────────────────────────────────────────
+  ner-service:
+    <<: [*restart, *logging]
+    build:
+      context: ./services/ner
+      dockerfile: Dockerfile
+    container_name: ner-service
+    ports:
+      - "${NER_PORT:-8001}:8001"
+    volumes:
+      - hf-cache:/models/hf_cache
+      # ONNX mode — uncomment and set NER_ONNX_PATH to use local artifacts:
+      # - ./artifacts/gliner_biomed_onnx:/models/gliner_onnx:ro
+    environment:
+      <<: *ml-env
+      NER_ONNX_PATH:            "${NER_ONNX_PATH:-}"
+      NER_HF_MODEL_ID:          "${NER_HF_MODEL_ID:-Ihor/gliner-biomed-large-v1.0}"
+      HF_HOME:                  "/models/hf_cache"
+      HF_DEVICE:                "${HF_DEVICE:-cpu}"
+      HUGGING_FACE_HUB_TOKEN:   "${HUGGING_FACE_HUB_TOKEN:-}"
+      APP_PORT:                 "8001"
+    networks:
+      - hc-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 15s
+      timeout:  5s
+      retries:  3
+      start_period: 60s
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 4. Embedding Service — SapBERT (ONNX or HuggingFace)
+  # ───────────────────────────────────────────────────────────────────────────
+  embedding-service:
+    <<: [*restart, *logging]
+    build:
+      context: ./services/embedding
+      dockerfile: Dockerfile
+    container_name: embedding-service
+    ports:
+      - "${EMBEDDING_PORT:-8002}:8002"
+    volumes:
+      - hf-cache:/models/hf_cache
+      # ONNX mode — uncomment and set EMBEDDING_ONNX_PATH to use local artifacts:
+      # - ./artifacts/sapbert_onnx:/models/sapbert_onnx:ro
+    environment:
+      <<: *ml-env
+      EMBEDDING_ONNX_PATH:      "${EMBEDDING_ONNX_PATH:-}"
+      EMBEDDING_HF_MODEL_ID:    "${EMBEDDING_HF_MODEL_ID:-cambridgeltl/SapBERT-from-PubMedBERT-fulltext}"
+      HF_HOME:                  "/models/hf_cache"
+      HF_DEVICE:                "${HF_DEVICE:-cpu}"
+      HUGGING_FACE_HUB_TOKEN:   "${HUGGING_FACE_HUB_TOKEN:-}"
+      APP_PORT:                 "8002"
+    networks:
+      - hc-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 15s
+      timeout:  5s
+      retries:  3
+      start_period: 60s
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 5. MedCAT Service — CogStack NER+L REST API (Flask/Gunicorn)
+  #
+  # Models are mounted read-only from ./artifacts/medcat_models into /cat/models
+  # inside the container. Two loading modes are supported:
+  #
+  #   a) Model pack (recommended, takes precedence):
+  #        Set MEDCAT_MODEL_PACK_PATH=<path inside /cat/models> in .env
+  #        e.g. MEDCAT_MODEL_PACK_PATH=/cat/models/umls_sm_pt2ch_533bab5115c6240489cdc.zip
+  #
+  #   b) Individual files (fallback when model pack is not set):
+  #        Set MEDCAT_CDB_PATH, MEDCAT_VOCAB_PATH, and optionally
+  #        MEDCAT_META_PATH_LIST (colon-separated) in .env
+  #
+  # Shared memory: APP_BULK_NPROC > 1 requires ≥8 g (default).
+  # Set MEDCAT_SHM_SIZE=1g in .env only if running single-worker inference.
+  # ───────────────────────────────────────────────────────────────────────────
+  medcat-service:
+    <<: [*restart, *logging]
+    image: cogstacksystems/medcat-service:latest
+    container_name: medcat-service
+    shm_size: "${MEDCAT_SHM_SIZE:-8g}"
+    ports:
+      - "${MEDCAT_PORT:-8004}:8004"
+    volumes:
+      - ./artifacts/medcat_models:/cat/models
+    environment:
+      # ── Gunicorn server ───────────────────────────────────────────────────
+      SERVER_HOST:           "0.0.0.0"
+      SERVER_PORT:           "8004"
+      SERVER_WORKERS:        "${MEDCAT_SERVER_WORKERS:-1}"
+      SERVER_WORKER_TIMEOUT: "${MEDCAT_WORKER_TIMEOUT:-300}"
+      SERVER_GUNICORN_MAX_REQUESTS:        "${MEDCAT_MAX_REQUESTS:-1000}"
+      SERVER_GUNICORN_MAX_REQUESTS_JITTER: "${MEDCAT_MAX_REQUESTS_JITTER:-50}"
+      # ── Model loading ─────────────────────────────────────────────────────
+      # APP_MEDCAT_MODEL_PACK overrides all individual paths below when set.
+      APP_MODEL_NAME:           "${MEDCAT_MODEL_NAME:-MedCAT}"
+      APP_MEDCAT_MODEL_PACK:    "${MEDCAT_MODEL_PACK_PATH:-}"
+      APP_MODEL_CDB_PATH:       "${MEDCAT_CDB_PATH:-}"
+      APP_MODEL_VOCAB_PATH:     "${MEDCAT_VOCAB_PATH:-}"
+      APP_MODEL_META_PATH_LIST: "${MEDCAT_META_PATH_LIST:-}"
+      # ── Processing ────────────────────────────────────────────────────────
+      # Bulk threads — keep in sync with shm_size (≥8 g needed for nproc > 1)
+      APP_BULK_NPROC: "${MEDCAT_BULK_NPROC:-8}"
+      # ── Optional features ─────────────────────────────────────────────────
+      APP_ENABLE_METRICS:  "${MEDCAT_ENABLE_METRICS:-false}"
+      APP_ENABLE_DEMO_UI:  "${MEDCAT_ENABLE_DEMO_UI:-false}"
+      DEID_MODE:           "${MEDCAT_DEID_MODE:-false}"
+      # ── Observability ─────────────────────────────────────────────────────
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    networks:
+      - hc-net
+    # /api/health/live is the guaranteed liveness endpoint documented by CogStack.
+    # Model loading from disk can take 2-5+ min for large packs; start_period gives
+    # a safe buffer before failures count toward retries.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/api/health/live"]
+      interval: 20s
+      timeout:  10s
+      retries:  5
+      start_period: 300s
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 6. MedGemma
+  # ───────────────────────────────────────────────────────────────────────────
+  medgemma:
+    <<: [*restart, *logging]
+    image: docker.io/amdenterpriseai/aim-google-medgemma-27b-it:0.13.0
+    container_name: medgemma-27b
+    ipc: host
+    shm_size: "64gb"
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    ports:
+      - "${LLM_PORT:-8000}:8000"
+    environment:
+      HUGGING_FACE_HUB_TOKEN:    "${HUGGING_FACE_HUB_TOKEN}"
+      AIM_MODEL_ID:              "google/medgemma-27b-it"
+      AIM_GPU_MODEL:             "MI300X"
+      AIM_LOG_LEVEL:             "INFO"
+      AIM_GPU_COUNT:             "1"
+      AIM_PORT:                  "8000"
+      AIM_ENGINE_ARGS:           '{"no-async-scheduling": null}'
+      VLLM_MAX_NUM_BATCHED_TOKENS: "4096"
+      VLLM_MAX_NUM_SEQS:           "1024"
+    networks:
+      - hc-net
+    # start_period covers first-run model download (google/medgemma-27b-it is ~54 GB fp16).
+    # Download time varies from ~7 min (1 Gbps) to 70+ min (100 Mbps); 1800s gives a
+    # comfortable window before failures start counting toward retries.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout:  10s
+      retries:  10
+      start_period: 1800s

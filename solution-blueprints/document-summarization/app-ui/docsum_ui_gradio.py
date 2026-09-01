@@ -230,7 +230,7 @@ def main():
 
     ui_component.queue(max_size=10)
 
-    api_app = gr.mount_gradio_app(api_app, ui_component, path="/")
+    api_app = gr.mount_gradio_app(api_app, ui_component, path="")
 
     cli_parser = argparse.ArgumentParser(
         description="AI Content Processor UI Server", formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -241,7 +241,13 @@ def main():
 
     log.info("Starting UI server | host=%s port=%d queue_size=%d", server_config.host, server_config.port, 10)
 
-    uvicorn.run(api_app, host=server_config.host, port=server_config.port, log_level="info")
+    uvicorn.run(
+        api_app,
+        host=server_config.host,
+        port=server_config.port,
+        log_level="info",
+        proxy_headers=True,
+    )
 
 
 if __name__ == "__main__":

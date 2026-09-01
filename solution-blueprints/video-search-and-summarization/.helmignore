@@ -1,0 +1,16 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+# Build inputs for the CI image pipeline, not Helm chart resources.
+components/
+docker/
+# Local/dev runner and its data, not part of the published chart.
+compose.yaml
+.env
+data/
+# Python caches and misc
+__pycache__/
+*.pyc
+*.mp4
+.DS_Store

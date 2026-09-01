@@ -1,0 +1,174 @@
+/*
+Copyright © Advanced Micro Devices, Inc., or its affiliates.
+
+SPDX-License-Identifier: MIT
+*/
+
+.wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+  padding: 16px 40px 8px;
+}
+
+.head {
+  flex-shrink: 0;
+  width: 180px;
+  padding-top: 18px;
+}
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.titleLabel {
+  display: inline-flex;
+  align-items: center;
+}
+.values {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.vR {
+  color: var(--amber-bright);
+}
+.vF {
+  color: var(--red);
+}
+.sep {
+  display: inline-block;
+  width: 10px;
+}
+
+.presetRow {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 14px;
+}
+.preset {
+  padding: 5px 11px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--border-b);
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s;
+}
+.preset:hover {
+  color: var(--text);
+  border-color: var(--blue);
+  background: var(--blue-dim);
+}
+.preset:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.sliderCol {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Zone labels positioned above the track at thumb positions */
+.zoneLabels {
+  position: relative;
+  height: 18px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+}
+.zoneLabels > span {
+  position: absolute;
+  white-space: nowrap;
+}
+.lgClean {
+  color: var(--green);
+}
+.lgReview {
+  color: var(--amber);
+}
+.lgFraud {
+  color: var(--red);
+}
+
+.slider {
+  position: relative;
+  height: 24px;
+  user-select: none;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 18px;
+  border-radius: 5px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.seg {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition:
+    width 0.08s,
+    left 0.08s;
+}
+.segClean {
+  left: 0;
+  background: var(--green-half-dim);
+  opacity: 0.85;
+}
+.segReview {
+  background: var(--amber-half-dim);
+  opacity: 0.85;
+}
+.segFraud {
+  background: var(--red-dim);
+  opacity: 0.85;
+}
+
+.thumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  border-radius: 14px;
+  border: 4px solid var(--bg);
+  cursor: grab;
+  padding: 0;
+  z-index: 2;
+  transition: box-shadow 0.15s;
+}
+.thumb:active {
+  cursor: grabbing;
+  box-shadow: 0 0 0 4px var(--blue-dim);
+}
+.thumbReview {
+  background: var(--amber);
+}
+.thumbFraud {
+  background: var(--red);
+}
+
+.ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}

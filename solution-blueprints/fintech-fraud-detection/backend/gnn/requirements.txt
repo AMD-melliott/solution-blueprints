@@ -1,0 +1,13 @@
+# Copyright © Advanced Micro Devices, Inc., or its affiliates.
+#
+# SPDX-License-Identifier: MIT
+
+bentoml==1.4.39
+numpy==2.4.6
+pyyaml==6.0.3
+# SAGEConv uses torch.mm / torch.scatter_add — pure PyTorch ops that run on ROCm.
+# The compiled extensions (torch-scatter, torch-sparse) have no ROCm wheels and
+# are not required for GraphSAGE inference.
+torch-geometric==2.8.0
+# Install torch for ROCm separately in the Dockerfile:
+#   pip install torch --index-url https://download.pytorch.org/whl/rocm7.1
