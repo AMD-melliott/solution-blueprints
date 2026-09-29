@@ -92,12 +92,15 @@ spec:
           args:
             - |
               set -e
-              apt-get update && apt-get install -y \
+              # Pods have HTTPS egress but no plain-HTTP egress; use the HTTPS Ubuntu mirrors.
+              sed -i 's#http://\([a-z]*\)\.ubuntu\.com#https://\1.ubuntu.com#g' /etc/apt/sources.list
+              apt-get update
+              apt-get install -y \
               build-essential \
               libglib2.0-0 \
               libgl1 \
-              libstdc++6 \
-              && rm -rf /var/lib/apt/lists/*
+              libstdc++6
+              rm -rf /var/lib/apt/lists/*
 
               GFX_VERSION=$(rocminfo 2>/dev/null | grep -o 'gfx[0-9a-z]*' | head -1 | sed 's/gfx//')
               if [ -z "$GFX_VERSION" ]; then
