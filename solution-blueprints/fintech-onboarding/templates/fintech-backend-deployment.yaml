@@ -162,10 +162,6 @@ spec:
               mountPath: /workload/mount
             - name: face-models
               mountPath: /facemodels
-            - name: dev-kfd
-              mountPath: /dev/kfd
-            - name: dev-dri
-              mountPath: /dev/dri
 
       volumes:
         - name: workload
@@ -175,9 +171,3 @@ spec:
           emptyDir: {}
         - name: face-models
           emptyDir: {}
-        - name: dev-kfd
-          hostPath:
-            path: /dev/kfd
-        - name: dev-dri
-          hostPath:
-            path: /dev/dri
